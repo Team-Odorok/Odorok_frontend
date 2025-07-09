@@ -166,7 +166,6 @@
 
           <!-- 액션 버튼 -->
           <div class="action-buttons">
-            <button @click="editDiary" class="edit-btn">수정하기</button>
             <button @click="deleteDiary" class="delete-btn">삭제하기</button>
           </div>
         </div>
@@ -589,11 +588,7 @@ export default {
       }
     }
 
-    // 일지 수정/삭제
-    const editDiary = () => {
-      console.log('Edit diary:', selectedDiary.value?.id)
-      // TODO: 일지 수정 페이지로 이동
-    }
+
 
     const deleteDiary = () => {
       if (confirm('정말로 이 일지를 삭제하시겠습니까?')) {
@@ -669,7 +664,6 @@ export default {
       closeImageModal,
       prevImage,
       nextImage,
-      editDiary,
       deleteDiary,
       fetchDiaries,
       formatDate

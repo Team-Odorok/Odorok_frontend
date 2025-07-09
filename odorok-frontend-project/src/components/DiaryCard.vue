@@ -20,16 +20,7 @@
         </div>
       </div>
       
-      <div class="card-actions">
-        <button class="action-btn view-btn" @click.stop="viewDiary">
-          <span class="btn-icon">👁️</span>
-          보기
-        </button>
-        <button class="action-btn edit-btn" @click.stop="editDiary">
-          <span class="btn-icon">✏️</span>
-          수정
-        </button>
-      </div>
+      <!-- 카드 클릭으로 일지 상세 보기 가능 -->
     </div>
   </div>
 </template>
@@ -67,22 +58,9 @@ export default {
       })
     }
 
-    // 일지 보기
-    const viewDiary = () => {
-      emit('click')
-    }
-
-    // 일지 수정
-    const editDiary = () => {
-      console.log('Edit diary:', props.diary.id)
-      // TODO: 일지 수정 페이지로 이동
-    }
-
     return {
       formatDate,
-      formatDateTime,
-      viewDiary,
-      editDiary
+      formatDateTime
     }
   }
 }
@@ -167,47 +145,7 @@ export default {
   font-weight: 400;
 }
 
-.card-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.view-btn {
-  background: #007bff;
-  color: white;
-}
-
-.view-btn:hover {
-  background: #0056b3;
-}
-
-.edit-btn {
-  background: #6c757d;
-  color: white;
-}
-
-.edit-btn:hover {
-  background: #545b62;
-}
-
-.btn-icon {
-  font-size: 0.9rem;
-}
+/* 카드 클릭으로 일지 상세 보기 가능 */
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
@@ -220,11 +158,6 @@ export default {
   }
   
   .date-item {
-    font-size: 0.8rem;
-  }
-  
-  .action-btn {
-    padding: 6px 8px;
     font-size: 0.8rem;
   }
 }
@@ -250,15 +183,6 @@ export default {
   .date-item {
     font-size: 0.75rem;
     margin-bottom: 4px;
-  }
-  
-  .action-btn {
-    padding: 5px 6px;
-    font-size: 0.75rem;
-  }
-  
-  .btn-icon {
-    font-size: 0.8rem;
   }
 }
 </style> 

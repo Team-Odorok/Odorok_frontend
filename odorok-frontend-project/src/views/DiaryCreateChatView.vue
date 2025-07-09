@@ -24,10 +24,16 @@
 
           <!-- 일지 생성 완료 상태 -->
       <div v-else-if="isCompleted" class="diary-completion">
-        <div class="completion-header">
-          <div class="completion-icon">🎉</div>
-          <h3>{{ getCompletionTitle() }}</h3>
-          <p>{{ getCompletionMessage() }}</p>
+        <!-- 완료 알림 -->
+        <div v-if="showCompletionNotification" class="completion-notification">
+          <div class="notification-content">
+            <div class="notification-icon">🎉</div>
+            <div class="notification-text">
+              <h3>{{ getCompletionTitle() }}</h3>
+              <p>{{ getCompletionMessage() }}</p>
+            </div>
+            <button @click="closeNotification" class="notification-close">×</button>
+          </div>
         </div>
 
         <!-- 일지 제목 -->
@@ -266,6 +272,9 @@ export default {
     const editingContent = ref('')
     const diaryTitle = ref('') // 일지 제목 (방문 코스명으로 초기화)
     
+    // 완료 알림 관련 상태
+    const showCompletionNotification = ref(false)
+    
     const visitedCourseId = route.params.visitedCourseId
     const style = route.params.style
 
@@ -469,6 +478,12 @@ export default {
             // 방문 코스명으로 제목 초기화
             diaryTitle.value = courseNames[visitedCourseId] || `코스 ${visitedCourseId}`
             isCompleted.value = true
+            // 완료 알림 표시
+            showCompletionNotification.value = true
+            // 5초 후 자동으로 알림 숨김
+            setTimeout(() => {
+              showCompletionNotification.value = false
+            }, 5000)
           }, 3000)
         }
         
@@ -537,6 +552,13 @@ export default {
         selectedDiaryIndex.value = generatedDiaries.value.length - 1
         showRegenerateForm.value = false
         feedback.value = ''
+        
+        // 재생성 완료 알림 표시
+        showCompletionNotification.value = true
+        // 5초 후 자동으로 알림 숨김
+        setTimeout(() => {
+          showCompletionNotification.value = false
+        }, 5000)
       } catch (err) {
         error.value = err.message || '일지 재생성에 실패했습니다.'
         console.error('Error regenerating diary:', err)
@@ -652,6 +674,11 @@ export default {
       isEditingContent.value = false
     }
 
+    // 알림 닫기
+    const closeNotification = () => {
+      showCompletionNotification.value = false
+    }
+
     // 일지 저장
     const saveDiary = async () => {
       if (!selectedDiary.value) return
@@ -746,7 +773,10 @@ export default {
       startEditContent,
       saveContent,
       cancelEditContent,
-      saveDiary
+      saveDiary,
+      // 완료 알림 관련
+      showCompletionNotification,
+      closeNotification
     }
   }
 }
@@ -878,6 +908,82 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* 완료 알림 */
+.completion-notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  animation: slideDown 0.5s ease-out;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 20px 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(40, 167, 69, 0.3);
+  min-width: 400px;
+  max-width: 600px;
+}
+
+.notification-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.notification-text {
+  flex: 1;
+}
+
+.notification-text h3 {
+  margin: 0 0 5px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.notification-text p {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.notification-close:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
 }
 
 .completion-header {
@@ -1554,6 +1660,26 @@ export default {
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
+  .completion-notification {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+  }
+  
+  .notification-content {
+    min-width: auto;
+    padding: 15px 20px;
+  }
+  
+  .notification-text h3 {
+    font-size: 1.1rem;
+  }
+  
+  .notification-text p {
+    font-size: 0.9rem;
+  }
+  
   .diary-create-chat-container {
     padding: 15px;
     height: 100vh;

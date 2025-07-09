@@ -58,7 +58,6 @@
 
       <!-- 액션 버튼 -->
       <div class="action-buttons">
-        <button @click="editDiary" class="edit-btn">수정하기</button>
         <button @click="deleteDiary" class="delete-btn">삭제하기</button>
       </div>
     </div>
@@ -171,12 +170,7 @@ export default {
       router.back()
     }
 
-    // 일지 수정
-    const editDiary = () => {
-      console.log('Edit diary:', diary.value.id)
-      // TODO: 일지 수정 페이지로 이동
-      // router.push(`/diaries/${diary.value.id}/edit`)
-    }
+
 
     // 일지 삭제
     const deleteDiary = () => {
@@ -228,7 +222,6 @@ export default {
       fetchDiaryDetail,
       formatDate,
       goBack,
-      editDiary,
       deleteDiary,
       openImageModal,
       closeImageModal,
