@@ -1,72 +1,81 @@
+// 다이어리 관련 API 호출 모듈
+// 토큰은 axios 요청 인터셉터에서 자동으로 헤더에 붙음
+
+import axios from 'axios'
+// 아래 getAccessToken을 이용해 토큰을 가져옴
+import { getAccessToken } from './authService'
+
 // 일지 관련 API 서비스
-const API_BASE_URL = '/api'
+const API_BASE_URL = 'http://18.208.139.237:8080/api'
 
-// JWT 토큰 가져오기 (실제 구현에서는 store나 localStorage에서 가져옴)
-const getAccessToken = () => {
-  // TODO: 실제 토큰 관리 로직으로 교체
-  return localStorage.getItem('accessToken') || 'mock-token'
-}
-
-// API 요청 헬퍼 함수
-const apiRequest = async (endpoint, options = {}) => {
-  const token = getAccessToken()
-  
-  const defaultOptions = {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    }
+// Axios 인스턴스 생성
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json'
   }
+})
 
-  const config = {
-    ...defaultOptions,
-    ...options,
-    headers: {
-      ...defaultOptions.headers,
-      ...options.headers
+// 요청 인터셉터 - 토큰 자동 추가
+apiClient.interceptors.request.use(
+  config => {
+     // 하드코딩 하지 않고 로컬스토리지에서 토큰을 자동으로 가져와서 Authorization 헤더에 넣음
+    const token = localStorage.getItem('accessToken')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
     }
-  }
+    else {
+      // TODO: 하드코딩 된 토큰 사용 중이라면, 나중에 이 부분은 제거하세요
+      // 예시 하드코딩 (임시):
+      config.headers.Authorization = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Indvbmp1bkBtYWlsLmNvbSIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE3NTQyMDQ3ODMsImV4cCI6MTc1NDIwNTM4M30.QsNEAqCo0IMpavyZ9zVagEYC14-V2X9YO4lp_zeUQM0'
+      // 여기까지
+      console.warn('AccessToken이 없습니다. 로그인 후 토큰을 저장하세요.')
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config)
+export default apiClient
+
+// 응답 인터셉터 - 에러 처리
+apiClient.interceptors.response.use(
+  response => response.data, // 자동으로 data만 반환
+  error => {
+    console.error('API Error:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      method: error.config?.method,
+      data: error.response?.data
+    })
     
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('AccessToken이 유효하지 않습니다.')
-      }
-      throw new Error(`HTTP error! status: ${response.status}`)
+    if (error.response?.status === 401) {
+      console.error('AccessToken이 유효하지 않습니다.')
+      // TODO: 토큰 갱신 또는 로그인 페이지로 리다이렉트
+    } else if (error.response?.status === 403) {
+      console.error('접근 권한이 없습니다. (403 Forbidden)')
+      // TODO: 권한 부족 처리
+    } else if (error.response?.status === 404) {
+      console.error('요청한 리소스를 찾을 수 없습니다. (404 Not Found)')
+    } else if (error.response?.status >= 500) {
+      console.error('서버 내부 오류가 발생했습니다.')
     }
     
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('API request failed:', error)
-    throw error
+    return Promise.reject(error)
   }
-}
+)
 
 // 일지 목록 조회
-export const getDiaryList = async (groupBy = null) => {
-  try {
-    const params = new URLSearchParams()
-    if (groupBy) {
-      params.append('groupBy', groupBy)
-    }
-    
-    const endpoint = `/diaries${params.toString() ? `?${params.toString()}` : ''}`
-    const response = await apiRequest(endpoint)
-    
-    return response
-  } catch (error) {
-    console.error('Failed to fetch diary list:', error)
-    throw error
-  }
+export const getDiaryList = (groupBy) => {
+  return apiClient.get(`/diaries?groupBy=${groupBy}`)  // ✅ 토큰 자동 첨부됨
 }
 
 // 일지 상세 조회
 export const getDiaryDetail = async (diaryId) => {
   try {
-    const response = await apiRequest(`/diaries/${diaryId}`)
+    const response = await apiClient.get(`/diaries/${diaryId}`)
     
     // API 응답 구조에 따른 에러 처리
     if (response.status === 'UNAUTHORIZED') {
@@ -89,10 +98,7 @@ export const getDiaryDetail = async (diaryId) => {
 // 일지 생성 (향후 구현)
 export const createDiary = async (diaryData) => {
   try {
-    const response = await apiRequest('/diaries', {
-      method: 'POST',
-      body: JSON.stringify(diaryData)
-    })
+    const response = await apiClient.post('/diaries', diaryData)
     return response
   } catch (error) {
     console.error('Failed to create diary:', error)
@@ -103,10 +109,7 @@ export const createDiary = async (diaryData) => {
 // 일지 수정 (향후 구현)
 export const updateDiary = async (diaryId, diaryData) => {
   try {
-    const response = await apiRequest(`/diaries/${diaryId}`, {
-      method: 'PUT',
-      body: JSON.stringify(diaryData)
-    })
+    const response = await apiClient.put(`/diaries/${diaryId}`, diaryData)
     return response
   } catch (error) {
     console.error('Failed to update diary:', error)
@@ -117,9 +120,7 @@ export const updateDiary = async (diaryId, diaryData) => {
 // 일지 삭제 (향후 구현)
 export const deleteDiary = async (diaryId) => {
   try {
-    const response = await apiRequest(`/diaries/${diaryId}`, {
-      method: 'DELETE'
-    })
+    const response = await apiClient.delete(`/diaries/${diaryId}`)
     return response
   } catch (error) {
     console.error('Failed to delete diary:', error)
@@ -130,7 +131,7 @@ export const deleteDiary = async (diaryId) => {
 // 일지 생성 권한 조회
 export const getDiaryPermissions = async () => {
   try {
-    const response = await apiRequest('/diaries/permissions')
+    const response = await apiClient.get('/diaries/permissions')
     
     // API 응답 구조에 따른 에러 처리
     if (response.status === 'UNAUTHORIZED') {
@@ -149,13 +150,8 @@ export const getDiaryPermissions = async () => {
 // 일지 생성 시작
 export const startDiaryGeneration = async (visitedCourseId, style) => {
   try {
-    const params = new URLSearchParams()
-    if (style) {
-      params.append('style', style)
-    }
-    
-    const endpoint = `/diaries/generation/${visitedCourseId}${params.toString() ? `?${params.toString()}` : ''}`
-    const response = await apiRequest(endpoint)
+    const params = style ? { style } : {}
+    const response = await apiClient.post(`/diaries/generation/${visitedCourseId}`, null, { params })
     
     // API 응답 구조에 따른 에러 처리
     if (response.status === 'UNAUTHORIZED') {
@@ -174,15 +170,9 @@ export const startDiaryGeneration = async (visitedCourseId, style) => {
 // 답변 제출
 export const submitAnswer = async (answer, chatLog) => {
   try {
-    const response = await apiRequest('/diaries/answers', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        answer: answer,
-        chatLog: chatLog
-      })
+    const response = await apiClient.post('/diaries/answers', {
+      answer: answer,
+      chatLog: chatLog
     })
     
     // API 응답 구조에 따른 에러 처리
@@ -201,18 +191,59 @@ export const submitAnswer = async (answer, chatLog) => {
   }
 }
 
-// 일지 재생성
-export const regenerateDiaryAPI = async (feedback = '', chatLog = []) => {
+// 일지 최종 저장
+export const saveDiary = async (title, content, images = []) => {
   try {
-    const response = await apiRequest('/diaries/regeneration', {
-      method: 'POST',
+    const formData = new FormData()
+    formData.append('title', title)
+    formData.append('content', content)
+    
+    // 이미지 파일들 추가
+    images.forEach((image, index) => {
+      formData.append('images', image)
+    })
+    
+    const response = await apiClient.post('/diaries', formData, {
       headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        feedback: feedback, // 사용자 추가 요구사항 (선택사항)
-        chatLog: chatLog // 이전까지 대화 로그 (필수)
-      })
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    
+    // API 응답 구조에 따른 에러 처리
+    if (response.status === 'BAD_REQUEST') {
+      throw new Error('title과 content는 필수입니다.')
+    } else if (response.status === 'UNAUTHORIZED') {
+      throw new Error('AccessToken이 유효하지 않습니다.')
+    } else if (response.status === 'NOT_FOUND') {
+      throw new Error('해당 draftDiaryId를 찾을 수 없습니다.')
+    } else if (response.status === 'INTERNAL_SERVER_ERROR') {
+      throw new Error('일지 생성 중 예외 발생')
+    }
+    
+    return response
+  } catch (error) {
+    console.error('Failed to save diary:', error)
+    throw error
+  }
+}
+
+// 사용 가능한 코스 목록 조회
+export const getAvailableCourses = async () => {
+  try {
+    const response = await apiClient.get('/courses/available')
+    return response
+  } catch (error) {
+    console.error('Failed to get available courses:', error)
+    throw error
+  }
+}
+
+// 일지 재생성 (regenerateDiary로도 export)
+export const regenerateDiary = async (feedback = '', chatLog = []) => {
+  try {
+    const response = await apiClient.post('/diaries/regeneration', {
+      feedback: feedback, // 사용자 추가 요구사항 (선택사항)
+      chatLog: chatLog // 이전까지 대화 로그 (필수)
     })
     
     // API 응답 구조에 따른 에러 처리
@@ -231,40 +262,34 @@ export const regenerateDiaryAPI = async (feedback = '', chatLog = []) => {
   }
 }
 
-// 일지 최종 저장
-export const saveDiary = async (title, content, images = []) => {
+// API 연결 테스트
+export const testApiConnection = async () => {
   try {
-    const formData = new FormData()
-    formData.append('title', title)
-    formData.append('content', content)
+    console.log('API 연결 테스트 시작...')
+    console.log('서버 주소:', 'http://18.208.139.237:8080')
+    console.log('현재 토큰:', getAccessToken() ? '있음' : '없음')
     
-    // 이미지 파일들 추가
-    images.forEach((image, index) => {
-      formData.append('images', image)
-    })
+    // GET 메서드만 사용하는 엔드포인트들 테스트
+    const endpoints = [
+      '/health',
+      '/api/health',
+      '/api/diaries',
+      '/api/courses/available'
+    ]
     
-    const response = await apiRequest('/diaries', {
-      method: 'POST',
-      headers: {
-        // multipart/form-data는 브라우저가 자동으로 설정
-      },
-      body: formData
-    })
-    
-    // API 응답 구조에 따른 에러 처리
-    if (response.status === 'BAD_REQUEST') {
-      throw new Error('title과 content는 필수입니다.')
-    } else if (response.status === 'UNAUTHORIZED') {
-      throw new Error('AccessToken이 유효하지 않습니다.')
-    } else if (response.status === 'NOT_FOUND') {
-      throw new Error('해당 draftDiaryId를 찾을 수 없습니다.')
-    } else if (response.status === 'INTERNAL_SERVER_ERROR') {
-      throw new Error('일지 생성 중 예외 발생')
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`테스트 중: ${endpoint}`)
+        const response = await axios.get(endpoint)
+        console.log(`${endpoint} 연결 성공:`, response.status)
+      } catch (error) {
+        console.log(`${endpoint} 연결 실패:`, error.response?.status, error.response?.statusText)
+      }
     }
     
-    return response
+    return '테스트 완료'
   } catch (error) {
-    console.error('Failed to save diary:', error)
+    console.error('API 연결 테스트 실패:', error)
     throw error
   }
 } 
