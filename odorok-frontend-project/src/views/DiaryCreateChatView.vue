@@ -159,7 +159,7 @@
               <button @click="saveContent" class="save-content-btn">수정완료</button>
               <button @click="cancelEditContent" class="cancel-content-btn">취소</button>
             </div>
-            <button @click="saveDiary" class="save-btn">
+            <button @click="handleSaveDiary" class="save-btn">
               저장
             </button>
           </div>
@@ -175,7 +175,7 @@
             ></textarea>
             <div class="feedback-actions">
               <button @click="cancelRegenerate" class="cancel-btn">취소</button>
-              <button @click="regenerateDiary" class="confirm-btn">재생성 시작</button>
+              <button @click="handleRegenerateDiary" class="confirm-btn">재생성 시작</button>
             </div>
           </div>
         </div>
@@ -236,7 +236,7 @@
 <script>
 import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { startDiaryGeneration, submitAnswer, saveDiary, regenerateDiaryAPI } from '@/services/diaryService.js'
+import { startDiaryGeneration, submitAnswer, saveDiary, regenerateDiary as regenerateDiaryAPI, getAvailableCourses } from '@/services/diaryService.js'
 
 export default {
   name: 'DiaryCreateChatView',
@@ -288,44 +288,9 @@ export default {
       return generatedDiaries.value.length < 3
     })
 
-    // 목업 데이터 (백엔드 연동 전까지 사용)
-    const mockQuestions = [
-      "남파랑길 1코스에서의 걷기 여행 다녀오셨군요. 혹시 이번 여행에는 누구와 함께 다녀오셨나요?",
-      "정말 좋은 동반자와 함께하셨네요! 그럼 이번 여행에서 가장 인상 깊었던 장소나 풍경은 무엇이었나요?",
-      "아름다운 해안 풍경을 보셨군요! 그날 날씨는 어땠나요? 날씨가 여행에 어떤 영향을 주었나요?",
-      "좋은 날씨에 여행하셨네요! 혹시 여행 중에 특별히 맛있었던 음식이나 카페가 있었나요?",
-      "맛있는 음식을 즐기셨군요! 마지막으로, 이번 여행에서 가장 기억에 남는 순간이나 에피소드가 있다면 무엇인가요?"
-    ]
-
-    // 목업 API 응답 구조 (실제 API와 동일한 구조로 시뮬레이션)
-    const mockApiResponse = {
-      status: 'IN_PROGRESS',
-      message: '일지 생성 요청 성공',
-      data: {
-        content: '', // 질문 내용이 여기에 들어감
-        chat_log: []
-      }
-    }
-
-    // 목업 일지 데이터
-    const mockGeneratedDiary = {
-      content: `오늘은 남파랑길 1코스를 걸으며 정말 아름다운 시간을 보냈습니다. 
-
-해운대 해변에서 시작한 이번 여행은 친구와 함께한 특별한 경험이었어요. 푸른 바다와 하얀 모래사장이 어우러진 풍경은 정말 환상적이었습니다.
-
-특히 해안가를 따라 걷는 동안 마주한 석양은 평생 잊을 수 없는 장면이었어요. 붉은 노을이 바다 위로 떨어지는 모습을 보며 마음이 평온해지는 것을 느꼈습니다.
-
-길을 따라 걷다가 발견한 작은 카페에서는 맛있는 커피와 함께 잠시 휴식을 취했는데, 그곳에서 마신 커피의 향이 아직도 기억에 남습니다.
-
-이번 여행을 통해 자연의 아름다움과 함께하는 시간의 소중함을 다시 한번 깨달았습니다. 앞으로도 이런 특별한 순간들을 더 많이 만들어가고 싶어요.`
-    }
-
-    // 방문 코스명 (실제로는 API에서 가져올 예정)
-    const courseNames = {
-      1: "남파랑길 1코스",
-      2: "제주 올레 7코스", 
-      3: "서울 한강공원"
-    }
+    // 방문 코스 정보
+    const visitedCourses = ref([])
+    const courseNames = ref({})
 
     // 스크롤을 맨 아래로 이동
     const scrollToBottom = async () => {
@@ -340,6 +305,31 @@ export default {
       router.back()
     }
 
+    // 방문 코스 정보 가져오기
+    const fetchVisitedCourses = async () => {
+      try {
+        const response = await getAvailableCourses()
+        visitedCourses.value = response || []
+        
+        // 코스명 매핑 생성
+        const courseMap = {}
+        visitedCourses.value.forEach(course => {
+          courseMap[course.id] = course.name
+        })
+        courseNames.value = courseMap
+      } catch (err) {
+        console.error('Failed to fetch visited courses:', err)
+        // 에러 시 기본값 설정
+        courseNames.value = {
+          1: "남파랑길 1코스",
+          2: "제주 올레 7코스", 
+          3: "서울 한강공원"
+        }
+      }
+    }
+
+
+
 
 
     // 채팅 시작
@@ -348,40 +338,14 @@ export default {
       error.value = null
       
       try {
-        // 실제 API 호출 (백엔드 준비되면 주석 해제)
-        // const response = await startDiaryGeneration(visitedCourseId, style)
-        // 
-        // if (response.data && response.data.content) {
-        //   chatMessages.value.push({
-        //     role: 'assistant',
-        //     content: response.data.content
-        //   })
-        // }
+        // 실제 API 호출
+        const response = await startDiaryGeneration(visitedCourseId, style)
         
-        // 목업 데이터 사용 (백엔드 연동 전까지)
-        await new Promise(resolve => setTimeout(resolve, 1500)) // 로딩 시뮬레이션
-        
-        // API 에러 시뮬레이션 (테스트용)
-        // throw new Error('일지 생성을 시작할 수 없습니다.')
-        
-        // 첫 번째 질문이 아직 없는 경우에만 추가
-        if (chatMessages.value.length === 0) {
-          // 목업 API 응답 구조로 시뮬레이션
-          const mockResponse = {
-            ...mockApiResponse,
-            data: {
-              ...mockApiResponse.data,
-              content: mockQuestions[0]
-            }
-          }
-          
-          // 첫 번째 질문 추가 (실제 API 응답 구조와 동일하게)
-          if (mockResponse.data && mockResponse.data.content) {
-            chatMessages.value.push({
-              role: 'assistant',
-              content: mockResponse.data.content
-            })
-          }
+        if (response.data && response.data.content) {
+          chatMessages.value.push({
+            role: 'assistant',
+            content: response.data.content
+          })
         }
         
         await scrollToBottom()
@@ -412,79 +376,34 @@ export default {
       isProcessing.value = true
       
       try {
-        // 실제 API 호출 (백엔드 준비되면 주석 해제)
-        // const chatLog = chatMessages.value.map(msg => ({
-        //   role: msg.role === 'assistant' ? 'ai' : 'user',
-        //   content: msg.content
-        // }))
-        // 
-        // const response = await submitAnswer(message, chatLog)
-        // 
-        // if (response.status === 'IN_PROGRESS') {
-        //   chatMessages.value.push({
-        //     role: 'assistant',
-        //     content: response.data.content
-        //   })
-        // } else if (response.status === 'DONE') {
-        //   // 일지 생성 완료
-        //   generatedDiaries.value = [{
-        //     title: response.data.content.title || '생성된 일지',
-        //     content: response.data.content
-        //   }]
-        //   isCompleted.value = true
-        // }
+        // 실제 API 호출
+        const chatLog = chatMessages.value.map(msg => ({
+          sender: msg.role === 'assistant' ? 'ai' : 'user',
+          message: msg.content
+        }))
         
-        // 목업 데이터 사용 (백엔드 연동 전까지)
-        await new Promise(resolve => setTimeout(resolve, 2000)) // 처리 시뮬레이션
+        const response = await submitAnswer(message, chatLog)
         
-        const currentQuestionIndex = chatMessages.value.filter(m => m.role === 'assistant').length - 1
-        
-        if (currentQuestionIndex < mockQuestions.length - 1) {
-          // 다음 질문 추가 (실제 API 응답 구조와 동일하게)
-          const mockResponse = {
-            ...mockApiResponse,
-            data: {
-              ...mockApiResponse.data,
-              content: mockQuestions[currentQuestionIndex + 1]
-            }
-          }
-          
-          if (mockResponse.data && mockResponse.data.content) {
-            chatMessages.value.push({
-              role: 'assistant',
-              content: mockResponse.data.content
-            })
-          }
-        } else {
-          // 모든 질문 완료 - 일지 생성 완료 시뮬레이션
-          const mockDoneResponse = {
-            status: 'DONE',
-            message: '일지 생성 완료',
-            data: {
-              content: "모든 질문에 답변해주셔서 감사합니다! 이제 AI가 멋진 일지를 생성하고 있어요. 잠시만 기다려주세요..."
-            }
-          }
-          
-          if (mockDoneResponse.data && mockDoneResponse.data.content) {
-            chatMessages.value.push({
-              role: 'assistant',
-              content: mockDoneResponse.data.content
-            })
-          }
-          
-          // 생성 완료 시뮬레이션
+        if (response.status === 'IN_PROGRESS') {
+          chatMessages.value.push({
+            role: 'assistant',
+            content: response.data.content
+          })
+        } else if (response.status === 'DONE') {
+          // 일지 생성 완료
+          generatedDiaries.value = [{
+            title: response.data.content.title || '생성된 일지',
+            content: response.data.content
+          }]
+          // 방문 코스명으로 제목 초기화
+          diaryTitle.value = courseNames.value[visitedCourseId] || `코스 ${visitedCourseId}`
+          isCompleted.value = true
+          // 완료 알림 표시
+          showCompletionNotification.value = true
+          // 5초 후 자동으로 알림 숨김
           setTimeout(() => {
-            generatedDiaries.value = [mockGeneratedDiary]
-            // 방문 코스명으로 제목 초기화
-            diaryTitle.value = courseNames[visitedCourseId] || `코스 ${visitedCourseId}`
-            isCompleted.value = true
-            // 완료 알림 표시
-            showCompletionNotification.value = true
-            // 5초 후 자동으로 알림 숨김
-            setTimeout(() => {
-              showCompletionNotification.value = false
-            }, 5000)
-          }, 3000)
+            showCompletionNotification.value = false
+          }, 5000)
         }
         
         await scrollToBottom()
@@ -509,7 +428,7 @@ export default {
     }
 
     // 일지 재생성
-    const regenerateDiary = async () => {
+    const handleRegenerateDiary = async () => {
       if (isRegenerating.value) return
       
       isRegenerating.value = true
@@ -680,34 +599,30 @@ export default {
     }
 
     // 일지 저장
-    const saveDiary = async () => {
+    const handleSaveDiary = async () => {
       if (!selectedDiary.value) return
       
       try {
-        // 실제 API 호출 (백엔드 준비되면 주석 해제)
-        // const imageFiles = attachedImages.value.map(img => img.file)
-        // 
-        // const response = await saveDiary(
-        //   diaryTitle.value, // 수정된 제목 사용
-        //   selectedDiary.value.content, // 수정된 내용 사용
-        //   imageFiles
-        // )
-        // 
-        // if (response.status === 'CREATED') {
-        //   // 저장 성공 후 일지 목록으로 이동
-        //   router.push('/')
-        // }
+        // 실제 API 호출
+        const imageFiles = attachedImages.value.map(img => img.file)
         
-        // 목업 데이터 사용 (백엔드 연동 전까지)
-        await new Promise(resolve => setTimeout(resolve, 1000)) // 저장 시뮬레이션
+        const diaryData = {
+          title: diaryTitle.value,
+          content: selectedDiary.value.content
+        }
         
-        const imageCount = attachedImages.value.length
-        const message = imageCount > 0 
-          ? `일지와 ${imageCount}장의 사진이 성공적으로 저장되었습니다!`
-          : '일지가 성공적으로 저장되었습니다!'
+        const response = await saveDiary(diaryData, imageFiles)
         
-        alert(message)
-        router.push('/')
+        if (response.status === 'CREATED') {
+          // 저장 성공 후 일지 목록으로 이동
+          const imageCount = attachedImages.value.length
+          const message = imageCount > 0 
+            ? `일지와 ${imageCount}장의 사진이 성공적으로 저장되었습니다!`
+            : '일지가 성공적으로 저장되었습니다!'
+          
+          alert(message)
+          router.push('/')
+        }
       } catch (err) {
         error.value = err.message || '일지 저장에 실패했습니다.'
         console.error('Error saving diary:', err)
@@ -719,12 +634,9 @@ export default {
       scrollToBottom()
     }, { deep: true })
 
-    onMounted(() => {
-      startChat()
-    })
-
-    // 페이지 로드 시 자동으로 채팅 시작
-    onMounted(() => {
+    onMounted(async () => {
+      // 방문 코스 정보 가져오기
+      await fetchVisitedCourses()
       // 채팅 메시지 초기화 후 시작
       chatMessages.value = []
       startChat()
@@ -754,7 +666,7 @@ export default {
       sendMessage,
       selectDiary,
       cancelRegenerate,
-      regenerateDiary,
+      handleRegenerateDiary,
       getCompletionTitle,
       getCompletionMessage,
       handleImageUpload,
@@ -773,7 +685,7 @@ export default {
       startEditContent,
       saveContent,
       cancelEditContent,
-      saveDiary,
+      handleSaveDiary,
       // 완료 알림 관련
       showCompletionNotification,
       closeNotification

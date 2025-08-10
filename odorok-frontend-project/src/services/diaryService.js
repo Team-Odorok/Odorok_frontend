@@ -28,7 +28,7 @@ apiClient.interceptors.request.use(
     else {
       // TODO: 하드코딩 된 토큰 사용 중이라면, 나중에 이 부분은 제거하세요
       // 예시 하드코딩 (임시):
-      config.headers.Authorization = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Indvbmp1bkBtYWlsLmNvbSIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE3NTQyMDQ3ODMsImV4cCI6MTc1NDIwNTM4M30.QsNEAqCo0IMpavyZ9zVagEYC14-V2X9YO4lp_zeUQM0'
+      config.headers.Authorization = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Indvbmp1bkBtYWlsLmNvbSIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE3NTQyMDkyNzcsImV4cCI6MTc1NDIwOTg3N30.KuTjfMqDPzJh4xqKE5S9VWMnT5IlDLKfNqMyeH135wU'
       // 여기까지
       console.warn('AccessToken이 없습니다. 로그인 후 토큰을 저장하세요.')
     }
@@ -131,7 +131,7 @@ export const deleteDiary = async (diaryId) => {
 // 일지 생성 권한 조회
 export const getDiaryPermissions = async () => {
   try {
-    const response = await apiClient.get('/diaries/permissions')
+    const response = await apiClient.get('/diaries/permission')
     
     // API 응답 구조에 따른 에러 처리
     if (response.status === 'UNAUTHORIZED') {

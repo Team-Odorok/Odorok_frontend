@@ -92,7 +92,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getDiaryDetail } from '@/services/diaryService.js'
+import { getDiaryDetail } from '@/services/diaryService'
 
 export default {
   name: 'DiaryDetailView',
@@ -107,22 +107,6 @@ export default {
     const selectedImage = ref('')
     const currentImageIndex = ref(0)
 
-    // 목업 데이터 (백엔드 연동 전까지 사용)
-    const mockDiary = {
-      id: 1,
-      title: "제주도 여행",
-      content: "제주도에 처음 방문했습니다. 아름다운 해변과 맛있는 음식들, 그리고 친절한 현지인들을 만나서 정말 즐거운 시간을 보냈습니다. 특히 성산일출봉에서 본 일출은 평생 잊을 수 없는 장면이었습니다. 다음에 또 방문하고 싶은 곳이에요!",
-      imgs: [
-        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
-        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
-        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop"
-      ],
-      userId: 1,
-      courseName: "제주도 성산일출봉 코스",
-      visitedAt: "2025-05-17 00:00:00",
-      createdAt: "2025-05-17 00:00:00"
-    }
-
     // 일지 상세 조회
     const fetchDiaryDetail = async () => {
       const diaryId = route.params.diaryId
@@ -135,17 +119,8 @@ export default {
       error.value = null
 
       try {
-        // 실제 API 호출 (백엔드 준비되면 주석 해제)
-        // const response = await getDiaryDetail(diaryId)
-        // diary.value = response.data.diary
-        
-        // 목업 데이터 사용 (백엔드 연동 전까지)
-        await new Promise(resolve => setTimeout(resolve, 1000)) // 로딩 시뮬레이션
-        
-        // API 에러 시뮬레이션 (테스트용)
-        // throw new Error('API 서버에 연결할 수 없습니다.')
-        
-        diary.value = mockDiary
+        const response = await getDiaryDetail(diaryId)
+        diary.value = response
       } catch (err) {
         error.value = err.message || '일지를 불러오는데 실패했습니다.'
         console.error('Error fetching diary detail:', err)

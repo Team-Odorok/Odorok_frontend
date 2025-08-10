@@ -279,7 +279,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DiaryCard from '@/components/DiaryCard.vue'
-import { getDiaryList } from '@/services/diaryService.js'
+import { getDiaryList, getDiaryDetail } from '@/services/diaryService'
 
 export default {
   name: 'DiaryListView',
@@ -306,111 +306,6 @@ export default {
     // 월별 합본 모달 관련 상태
     const currentMonthDiaryIndex = ref(0)
     const currentMonthDiary = ref(null)
-
-    // 목업 데이터 (백엔드 연동 전까지 사용)
-    const mockDiaries = [
-      {
-        id: 1,
-        title: "제주도 여행",
-        visitedAt: "2025-05-17",
-        createdAt: "2025-05-17 00:00:00"
-      },
-      {
-        id: 2,
-        title: "부산 해운대",
-        visitedAt: "2025-05-16",
-        createdAt: "2025-05-16 12:30:00"
-      },
-      {
-        id: 3,
-        title: "서울 남산타워",
-        visitedAt: "2025-04-20",
-        createdAt: "2025-04-20 15:45:00"
-      },
-      {
-        id: 4,
-        title: "경주 불국사",
-        visitedAt: "2025-03-15",
-        createdAt: "2025-03-15 09:20:00"
-      },
-      {
-        id: 5,
-        title: "강릉 커피거리",
-        visitedAt: "2024-12-10",
-        createdAt: "2024-12-10 14:30:00"
-      },
-      {
-        id: 6,
-        title: "여수 돌산공원",
-        visitedAt: "2024-11-25",
-        createdAt: "2024-11-25 11:15:00"
-      },
-      {
-        id: 7,
-        title: "전주 한옥마을",
-        visitedAt: "2024-10-05",
-        createdAt: "2024-10-05 16:40:00"
-      },
-      {
-        id: 8,
-        title: "속초 설악산",
-        visitedAt: "2024-09-20",
-        createdAt: "2024-09-20 08:30:00"
-      },
-      {
-        id: 9,
-        title: "부산 감천문화마을",
-        visitedAt: "2024-08-15",
-        createdAt: "2024-08-15 14:20:00"
-      },
-      {
-        id: 10,
-        title: "대구 팔공산",
-        visitedAt: "2024-07-10",
-        createdAt: "2024-07-10 09:30:00"
-      }
-    ]
-
-    // 목업 데이터에 상세 정보 추가
-    const mockDiaryDetails = {
-      1: {
-        id: 1,
-        title: "제주도 여행",
-        content: "제주도에 처음 방문했습니다. 아름다운 해변과 맛있는 음식들, 그리고 친절한 현지인들을 만나서 정말 즐거운 시간을 보냈습니다. 특히 성산일출봉에서 본 일출은 평생 잊을 수 없는 장면이었습니다.",
-        imgs: [
-          "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
-          "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop"
-        ],
-        userId: 1,
-        courseName: "제주도 성산일출봉 코스",
-        visitedAt: "2025-05-17 00:00:00",
-        createdAt: "2025-05-17 00:00:00"
-      },
-      2: {
-        id: 2,
-        title: "부산 해운대",
-        content: "부산 해운대에서 멋진 해변을 구경했습니다. 바다의 푸른색과 하늘의 아름다움이 정말 인상적이었습니다.",
-        imgs: [
-          "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop"
-        ],
-        userId: 1,
-        courseName: "부산 해운대 해변",
-        visitedAt: "2025-05-16 00:00:00",
-        createdAt: "2025-05-16 00:00:00"
-      },
-      3: {
-        id: 3,
-        title: "서울 남산타워",
-        content: "서울 남산타워에서 서울의 야경을 감상했습니다. 도시의 불빛들이 마치 반짝이는 보석 같았습니다.",
-        imgs: [
-          "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop"
-        ],
-        userId: 1,
-        courseName: "서울 남산타워",
-        visitedAt: "2025-04-20 00:00:00",
-        createdAt: "2025-04-20 00:00:00"
-             }
-     }
 
     // 사용 가능한 연도 목록
     const availableYears = computed(() => {
@@ -513,44 +408,78 @@ export default {
     }
 
     // 월별 합본 보기
-    const viewMonthSummary = (monthGroup) => {
+    const viewMonthSummary = async (monthGroup) => {
       selectedMonthGroup.value = monthGroup
       selectedDiary.value = null
       currentMonthDiaryIndex.value = 0
-      currentMonthDiary.value = mockDiaryDetails[monthGroup.diaries[0].id] || monthGroup.diaries[0]
+      
+      // 첫 번째 일지의 상세 정보 가져오기
+      try {
+        const diaryDetail = await getDiaryDetail(monthGroup.diaries[0].id)
+        currentMonthDiary.value = diaryDetail
+      } catch (error) {
+        console.error('Failed to fetch diary detail:', error)
+        currentMonthDiary.value = monthGroup.diaries[0]
+      }
+      
       showDiaryModal.value = true
     }
 
     // 월별 일지 네비게이션
-    const prevMonthDiary = () => {
+    const prevMonthDiary = async () => {
       if (currentMonthDiaryIndex.value > 0) {
         currentMonthDiaryIndex.value--
         const diary = selectedMonthGroup.value.diaries[currentMonthDiaryIndex.value]
-        currentMonthDiary.value = mockDiaryDetails[diary.id] || diary
+        
+        try {
+          const diaryDetail = await getDiaryDetail(diary.id)
+          currentMonthDiary.value = diaryDetail
+        } catch (error) {
+          console.error('Failed to fetch diary detail:', error)
+          currentMonthDiary.value = diary
+        }
       }
     }
 
-    const nextMonthDiary = () => {
+    const nextMonthDiary = async () => {
       if (currentMonthDiaryIndex.value < selectedMonthGroup.value.diaries.length - 1) {
         currentMonthDiaryIndex.value++
         const diary = selectedMonthGroup.value.diaries[currentMonthDiaryIndex.value]
-        currentMonthDiary.value = mockDiaryDetails[diary.id] || diary
+        
+        try {
+          const diaryDetail = await getDiaryDetail(diary.id)
+          currentMonthDiary.value = diaryDetail
+        } catch (error) {
+          console.error('Failed to fetch diary detail:', error)
+          currentMonthDiary.value = diary
+        }
       }
     }
 
     // 일지 상세보기 (모달)
-    const viewDiary = (diary) => {
-      // 목업 데이터에서 상세 정보 가져오기
-      const diaryDetail = mockDiaryDetails[diary.id] || diary
-      selectedDiary.value = diaryDetail
+    const viewDiary = async (diary) => {
+      try {
+        const diaryDetail = await getDiaryDetail(diary.id)
+        selectedDiary.value = diaryDetail
+      } catch (error) {
+        console.error('Failed to fetch diary detail:', error)
+        selectedDiary.value = diary
+      }
+      
       selectedMonthGroup.value = null
       showDiaryModal.value = true
     }
 
     // 모달에서 일지 보기
-    const viewDiaryInModal = (diary) => {
-      const diaryDetail = mockDiaryDetails[diary.id] || diary
-      selectedDiary.value = diaryDetail
+    const viewDiaryInModal = async (diary) => {
+      try {
+        const diaryDetail = await getDiaryDetail(diary.id)
+        selectedDiary.value = diaryDetail
+      } catch (error) {
+        console.error('Failed to fetch diary detail:', error)
+        selectedDiary.value = diary
+      }
+      
       selectedMonthGroup.value = null
     }
 
@@ -604,23 +533,17 @@ export default {
       error.value = null
       
       try {
-        // 실제 API 호출 (백엔드 준비되면 주석 해제)
-        // const response = await getDiaryList('year')
-        // 
-        // if (response.data) {
-        //   diaries.value = Object.values(response.data).flat()
-        // }
+        const response = await getDiaryList('year')
         
-        // 목업 데이터 사용 (백엔드 연동 전까지)
-        await new Promise(resolve => setTimeout(resolve, 1000)) // 로딩 시뮬레이션
-        
-        // API 에러 시뮬레이션 (테스트용)
-        // throw new Error('API 서버에 연결할 수 없습니다.')
-        
-        diaries.value = mockDiaries
+        if (response.data) {
+          diaries.value = Object.values(response.data).flat()
+        } else {
+          diaries.value = []
+        }
       } catch (err) {
         error.value = err.message || '일지 목록을 불러오는데 실패했습니다.'
         console.error('Error fetching diaries:', err)
+        diaries.value = []
       } finally {
         loading.value = false
       }

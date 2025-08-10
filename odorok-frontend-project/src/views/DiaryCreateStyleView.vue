@@ -134,7 +134,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getDiaryPermissions } from '@/services/diaryService.js'
+import { getDiaryPermissions, getAvailableCourses } from '@/services/diaryService'
 
 export default {
   name: 'DiaryCreateStyleView',
@@ -182,28 +182,6 @@ export default {
       }
     ]
 
-    // 목업 데이터 (백엔드 연동 전까지 사용)
-    const mockVisitedCourses = [
-      {
-        id: 1,
-        name: "남파랑길 1코스",
-        visitedAt: "2025-05-17",
-        description: "부산 해운대에서 시작하는 아름다운 해안길"
-      },
-      {
-        id: 2,
-        name: "제주 올레 7코스",
-        visitedAt: "2025-04-20",
-        description: "제주도의 숨겨진 아름다움을 만나는 길"
-      },
-      {
-        id: 3,
-        name: "서울 한강공원",
-        visitedAt: "2025-03-15",
-        description: "도시 속 휴식공간, 한강의 풍경"
-      }
-    ]
-
     // 진행 가능 여부 확인
     const canProceed = computed(() => {
       return selectedTone.value && selectedCourse.value !== null
@@ -231,23 +209,16 @@ export default {
       error.value = null
       
       try {
-        // 실제 API 호출 (백엔드 준비되면 주석 해제)
-        // const response = await getDiaryPermissions()
-        // 
-        // if (response.data.permission.canCreateDiary) {
-        //   // 방문 코스 정보 가져오기 (별도 API 필요)
-        //   visitedCourses.value = await getVisitedCourses()
-        // } else {
-        //   error.value = '일지 생성이 불가능합니다. 방문한 코스가 없거나 일지 생성 한도를 초과했습니다.'
-        // }
+        // 권한 확인
+        const permissionResponse = await getDiaryPermissions()
         
-        // 목업 데이터 사용 (백엔드 연동 전까지)
-        await new Promise(resolve => setTimeout(resolve, 1000)) // 로딩 시뮬레이션
-        
-        // API 에러 시뮬레이션 (테스트용)
-        // throw new Error('일지 생성이 불가능합니다.')
-        
-        visitedCourses.value = mockVisitedCourses
+        if (permissionResponse.canCreateDiary) {
+          // 사용 가능한 코스 정보 가져오기
+          const coursesResponse = await getAvailableCourses()
+          visitedCourses.value = coursesResponse || []
+        } else {
+          error.value = '일지 생성이 불가능합니다. 방문한 코스가 없거나 일지 생성 한도를 초과했습니다.'
+        }
       } catch (err) {
         error.value = err.message || '일지 생성 권한을 확인할 수 없습니다.'
         console.error('Error checking permissions:', err)
