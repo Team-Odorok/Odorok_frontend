@@ -27,8 +27,12 @@
 
     <!-- 일지 생성 버튼 -->
     <div class="create-diary-section">
-      <button @click="createDiary" class="create-diary-btn">
-        ✏️ 새 일지 작성
+      <button 
+        @click="createDiary" 
+        :disabled="creatingDiary"
+        class="create-diary-btn"
+      >
+        {{ creatingDiary ? '권한 확인 중...' : '✏️ 새 일지 작성' }}
       </button>
     </div>
 
@@ -96,7 +100,13 @@
         <div class="empty-icon">📝</div>
         <h3>아직 작성된 일지가 없습니다</h3>
         <p>첫 번째 여행 일지를 작성해보세요!</p>
-        <button @click="createDiary" class="create-btn">일지 작성하기</button>
+        <button 
+          @click="createDiary" 
+          :disabled="creatingDiary"
+          class="create-btn"
+        >
+          {{ creatingDiary ? '권한 확인 중...' : '일지 작성하기' }}
+        </button>
       </div>
     </div>
 
@@ -272,6 +282,14 @@
         </div>
       </div>
     </div>
+
+    <!-- 토스트 알림 -->
+    <Toast 
+      :show="showToast"
+      :message="toastMessage"
+      :type="toastType"
+      @close="closeToast"
+    />
   </div>
 </template>
 
@@ -279,12 +297,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DiaryCard from '@/components/DiaryCard.vue'
-import { getDiaryList, getDiaryDetail } from '@/services/diaryService'
+import Toast from '@/components/Toast.vue'
+import { getDiaryList, getDiaryDetail, getDiaryPermissions } from '@/services/diaryService'
 
 export default {
   name: 'DiaryListView',
   components: {
-    DiaryCard
+    DiaryCard,
+    Toast
   },
   setup() {
     const router = useRouter()
@@ -294,6 +314,12 @@ export default {
     const selectedYear = ref('')
     const currentPage = ref(1)
     const itemsPerPage = ref(3) // 한 페이지당 표시할 월 그룹 수
+    const creatingDiary = ref(false) // 일지 생성 권한 확인 중 상태
+    
+    // 토스트 관련 상태
+    const showToast = ref(false)
+    const toastMessage = ref('')
+    const toastType = ref('info')
     
     // 모달 관련 상태
     const showDiaryModal = ref(false)
@@ -403,8 +429,43 @@ export default {
     }
 
     // 일지 생성
-    const createDiary = () => {
-      router.push('/diaries/create/style')
+    const createDiary = async () => {
+      creatingDiary.value = true // 권한 확인 중 상태로 변경
+      try {
+        // 권한 확인
+        const permissionResponse = await getDiaryPermissions()
+        
+        if (permissionResponse.canCreateDiary) {
+          // 권한이 있으면 스타일 설정 페이지로 이동
+          router.push('/diaries/create/style')
+        } else {
+          // 권한이 없으면 토스트 메시지 표시
+          showToastMessage('일지 생성권이 없습니다.', 'error')
+          console.warn('일지 생성 권한 없음:', permissionResponse)
+        }
+      } catch (err) {
+        showToastMessage(err.message || '일지 생성 권한을 확인할 수 없습니다.', 'error')
+        console.error('Error checking diary permissions:', err)
+      } finally {
+        creatingDiary.value = false // 권한 확인 완료 상태로 변경
+      }
+    }
+
+    // 토스트 메시지 표시
+    const showToastMessage = (message, type = 'info') => {
+      toastMessage.value = message
+      toastType.value = type
+      showToast.value = true
+      
+      // 3초 후 자동으로 닫기
+      setTimeout(() => {
+        showToast.value = false
+      }, 3000)
+    }
+
+    // 토스트 닫기
+    const closeToast = () => {
+      showToast.value = false
     }
 
     // 월별 합본 보기
@@ -573,6 +634,10 @@ export default {
       showImageModal,
       selectedImage,
       currentImageIndex,
+      creatingDiary,
+      showToast,
+      toastMessage,
+      toastType,
       onYearChange,
       prevPage,
       nextPage,
@@ -589,7 +654,9 @@ export default {
       nextImage,
       deleteDiary,
       fetchDiaries,
-      formatDate
+      formatDate,
+      showToastMessage,
+      closeToast
     }
   }
 }
@@ -666,9 +733,16 @@ export default {
   font-weight: 600;
 }
 
-.create-diary-btn:hover {
+.create-diary-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.create-diary-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .loading {
@@ -1038,8 +1112,13 @@ export default {
   transition: background 0.3s ease;
 }
 
-.create-btn:hover {
+.create-btn:hover:not(:disabled) {
   background: #0056b3;
+}
+
+.create-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
 }
 
 /* 페이지네이션 */

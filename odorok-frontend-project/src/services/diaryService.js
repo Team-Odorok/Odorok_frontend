@@ -137,6 +137,11 @@ export const getDiaryPermissions = async () => {
       throw new Error('일지 생성 가능 여부 조회 중 예외 발생')
     }
     
+    // 성공 응답인 경우 data 필드에서 권한 정보 반환
+    if (response.status === 'success' && response.data) {
+      return response.data
+    }
+    
     return response
   } catch (error) {
     console.error('Failed to get diary permissions:', error)
