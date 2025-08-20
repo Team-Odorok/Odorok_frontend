@@ -100,13 +100,6 @@
         <div class="empty-icon">📝</div>
         <h3>아직 작성된 일지가 없습니다</h3>
         <p>첫 번째 여행 일지를 작성해보세요!</p>
-        <button 
-          @click="createDiary" 
-          :disabled="creatingDiary"
-          class="create-btn"
-        >
-          {{ creatingDiary ? '권한 확인 중...' : '일지 작성하기' }}
-        </button>
       </div>
     </div>
 
