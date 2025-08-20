@@ -4,7 +4,7 @@ import axios from 'axios'
 
 // 인증 전용 Axios 인스턴스
 const authClient = axios.create({
-  baseURL: '/auth', // 인증 관련 엔드포인트
+  baseURL: 'http://18.208.139.237:8080', // 올바른 서버 주소로 변경
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -27,7 +27,7 @@ authClient.interceptors.request.use(
 
 // 응답 인터셉터 - 에러 처리
 authClient.interceptors.response.use(
-  response => response.data, // 자동으로 data만 반환
+  response => response, // 전체 응답을 반환하도록 수정
   error => {
     console.error('Auth API Error:', {
       status: error.response?.status,

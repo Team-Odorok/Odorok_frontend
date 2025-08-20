@@ -12,6 +12,7 @@
             v-model="username"
             type="email"
             placeholder="wonjun@mail.com"
+            autocomplete="username"
             required
             class="form-input"
           />
@@ -24,6 +25,7 @@
             v-model="password"
             type="password"
             placeholder="123"
+            autocomplete="current-password"
             required
             class="form-input"
           />

@@ -24,12 +24,9 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('accessToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      console.log('토큰이 헤더에 추가되었습니다.')
     }
     else {
-      // TODO: 하드코딩 된 토큰 사용 중이라면, 나중에 이 부분은 제거하세요
-      // 예시 하드코딩 (임시):
-      config.headers.Authorization = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Indvbmp1bkBtYWlsLmNvbSIsInJvbGUiOiJST0xFX1VTRVIiLCJpYXQiOjE3NTQyMDkyNzcsImV4cCI6MTc1NDIwOTg3N30.KuTjfMqDPzJh4xqKE5S9VWMnT5IlDLKfNqMyeH135wU'
-      // 여기까지
       console.warn('AccessToken이 없습니다. 로그인 후 토큰을 저장하세요.')
     }
     return config
