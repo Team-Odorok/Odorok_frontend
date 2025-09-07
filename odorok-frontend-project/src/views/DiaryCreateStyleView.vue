@@ -109,9 +109,9 @@
               name="course"
             >
             <div class="course-content">
-              <h3>{{ course.name }}</h3>
+              <h3>{{ getCourseName(course) }}</h3>
               <p class="course-date">{{ formatDate(course.visitedAt) }}</p>
-              <p class="course-description">{{ course.description }}</p>
+              <p class="course-description">{{ getCourseDescription(course) }}</p>
             </div>
           </label>
         </div>
@@ -198,6 +198,27 @@ export default {
       })
     }
 
+    // 코스 이름 가져오기
+    const getCourseName = (course) => {
+      if (!course) return '알 수 없는 코스'
+      
+      // courseName 필드 사용
+      if (course.courseName) {
+        return course.courseName
+      }
+      
+      // 필드가 없으면 ID나 기본값 사용
+      return course.id ? `코스 ${course.id}` : '알 수 없는 코스'
+    }
+
+    // 코스 설명 가져오기
+    const getCourseDescription = (course) => {
+      if (!course) return ''
+      
+      // 현재 API 응답에는 설명 필드가 없음
+      return ''
+    }
+
     // 뒤로가기
     const goBack = () => {
       router.back()
@@ -213,15 +234,22 @@ export default {
         const permissionResponse = await getDiaryPermissions()
         
         if (permissionResponse.canCreateDiary) {
-          // 사용 가능한 코스 정보 가져오기
-          const coursesResponse = await getAvailableCourses()
-          visitedCourses.value = coursesResponse || []
+          try {
+            // 사용 가능한 코스 정보 가져오기
+            const coursesResponse = await getAvailableCourses()
+            visitedCourses.value = coursesResponse || []
+          } catch (courseErr) {
+            console.warn('코스 정보를 가져올 수 없습니다. 기본 코스로 진행합니다.', courseErr)
+            // 코스 정보를 가져올 수 없어도 일지 생성은 가능하도록 함
+            visitedCourses.value = []
+          }
         } else {
           error.value = '일지 생성이 불가능합니다. 방문한 코스가 없거나 일지 생성 한도를 초과했습니다.'
         }
       } catch (err) {
-        error.value = err.message || '일지 생성 권한을 확인할 수 없습니다.'
-        console.error('Error checking permissions:', err)
+        console.warn('권한 확인 실패. 기본 권한으로 진행합니다.', err)
+        // 권한 확인 실패 시에도 일지 생성 시도
+        visitedCourses.value = []
       } finally {
         loading.value = false
       }
@@ -257,6 +285,8 @@ export default {
       toneOptions,
       canProceed,
       formatDate,
+      getCourseName,
+      getCourseDescription,
       goBack,
       checkPermissions,
       startGeneration

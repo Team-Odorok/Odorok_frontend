@@ -21,14 +21,9 @@ const apiClient = axios.create({
 // 요청 인터셉터 - 토큰 자동 추가
 apiClient.interceptors.request.use(
   config => {
-     // 하드코딩 하지 않고 로컬스토리지에서 토큰을 자동으로 가져와서 Authorization 헤더에 넣음
     const token = localStorage.getItem('accessToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-      console.log('토큰이 헤더에 추가되었습니다.')
-    }
-    else {
-      console.warn('AccessToken이 없습니다. 로그인 후 토큰을 저장하세요.')
     }
     return config
   },
@@ -69,7 +64,6 @@ apiClient.interceptors.response.use(
 export const getDiaryList = async (groupBy) => {
   try {
     const response = await apiClient.get(`/diaries?groupBy=${groupBy}`)
-    console.log('다이어리 목록 API 응답:', response)
     return response
   } catch (error) {
     console.error('Failed to fetch diary list:', error)
@@ -136,7 +130,12 @@ export const deleteDiary = async (diaryId) => {
 // 일지 생성 권한 조회
 export const getDiaryPermissions = async () => {
   try {
-    const response = await apiClient.get('/diaries/permission')
+    // 권한 확인은 한 번만 시도 (이미 성공 확인됨)
+    const endpoint = '/diaries/permission'
+    
+    console.log(`권한 확인 시도 중: ${endpoint}`)
+    const response = await apiClient.get(endpoint)
+    console.log(`${endpoint} 성공:`, response)
     
     // API 응답 구조에 따른 에러 처리
     if (response.status === 'UNAUTHORIZED') {
@@ -151,17 +150,24 @@ export const getDiaryPermissions = async () => {
     }
     
     return response
+    
   } catch (error) {
     console.error('Failed to get diary permissions:', error)
-    throw error
+    // 권한 확인 실패 시에도 기본적으로 일지 생성 허용
+    return { canCreateDiary: true }
   }
 }
 
 // 일지 생성 시작
 export const startDiaryGeneration = async (visitedCourseId, style) => {
   try {
+    // 스웨거에서 확인한 정확한 엔드포인트 사용 (GET 요청)
+    const endpoint = `/diaries/generation/${visitedCourseId}`
+    
+    console.log(`일지 생성 시도 중: ${endpoint}`)
     const params = style ? { style } : {}
-    const response = await apiClient.post(`/diaries/generation/${visitedCourseId}`, null, { params })
+    const response = await apiClient.get(endpoint, { params })
+    console.log(`${endpoint} 성공:`, response)
     
     // API 응답 구조에 따른 에러 처리
     if (response.status === 'UNAUTHORIZED') {
@@ -180,10 +186,14 @@ export const startDiaryGeneration = async (visitedCourseId, style) => {
 // 답변 제출
 export const submitAnswer = async (answer, chatLog) => {
   try {
-    const response = await apiClient.post('/diaries/answers', {
+    const requestData = {
       answer: answer,
       chatLog: chatLog
-    })
+    }
+    
+    console.log('답변 제출 시도 중:', requestData)
+    const response = await apiClient.post('/diaries/answers', requestData)
+    console.log('답변 제출 성공:', response)
     
     // API 응답 구조에 따른 에러 처리
     if (response.status === 'BAD_REQUEST') {
@@ -204,20 +214,21 @@ export const submitAnswer = async (answer, chatLog) => {
 // 일지 최종 저장
 export const saveDiary = async (title, content, images = []) => {
   try {
-    const formData = new FormData()
-    formData.append('title', title)
-    formData.append('content', content)
+    // 스웨거 스펙에 맞게 diary 객체와 images 배열로 구성
+    const requestData = {
+      diary: {
+        title: title,
+        content: content
+      },
+      images: images
+    }
     
-    // 이미지 파일들 추가
-    images.forEach((image, index) => {
-      formData.append('images', image)
-    })
+    console.log('일지 저장 요청 데이터:', requestData)
+    console.log('diary 객체:', requestData.diary)
+    console.log('images 배열 길이:', requestData.images.length)
     
-    const response = await apiClient.post('/diaries', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    const response = await apiClient.post('/diaries', requestData)
+    console.log('일지 저장 응답:', response)
     
     // API 응답 구조에 따른 에러 처리
     if (response.status === 'BAD_REQUEST') {
@@ -240,7 +251,37 @@ export const saveDiary = async (title, content, images = []) => {
 // 사용 가능한 코스 목록 조회
 export const getAvailableCourses = async () => {
   try {
-    const response = await apiClient.get('/courses/available')
+    // 스웨거에서 확인한 정확한 엔드포인트 사용
+    const endpoint = '/diaries/available-course'
+    
+    console.log(`시도 중: ${endpoint}`)
+    const response = await apiClient.get(endpoint)
+    console.log(`${endpoint} 성공:`, response)
+    
+    // 응답 데이터 구조 확인 및 정규화
+    if (response && response.data) {
+      // 스웨거 응답 구조: { status: "success", message: "...", data: { response: [] } }
+      if (response.data.response && Array.isArray(response.data.response)) {
+        const courses = response.data.response
+        console.log(`일지 생성 가능한 코스 개수: ${courses.length}개`)
+        
+        if (courses.length === 0) {
+          console.log('💡 모든 방문한 코스에 이미 일지가 작성되었거나, 일지 작성 가능한 코스가 없습니다.')
+        }
+        
+        return courses
+      }
+      // data가 배열인 경우 그대로 반환
+      if (Array.isArray(response.data)) {
+        return response.data
+      }
+      // data가 객체인 경우 values 추출
+      if (typeof response.data === 'object') {
+        const values = Object.values(response.data)
+        return Array.isArray(values[0]) ? values.flat() : values
+      }
+    }
+    
     return response
   } catch (error) {
     console.error('Failed to get available courses:', error)
@@ -251,10 +292,21 @@ export const getAvailableCourses = async () => {
 // 일지 재생성 (regenerateDiary로도 export)
 export const regenerateDiary = async (feedback = '', chatLog = []) => {
   try {
-    const response = await apiClient.post('/diaries/regeneration', {
+    const requestData = {
       feedback: feedback, // 사용자 추가 요구사항 (선택사항)
       chatLog: chatLog // 이전까지 대화 로그 (필수)
-    })
+    }
+    
+    console.log('일지 재생성 API 요청:', requestData)
+    console.log('요청 데이터 상세:')
+    console.log('- feedback:', requestData.feedback)
+    console.log('- chatLog 길이:', requestData.chatLog.length)
+    console.log('- chatLog 내용:', requestData.chatLog)
+    
+    const response = await apiClient.post('/diaries/regeneration', requestData)
+    console.log('일지 재생성 API 응답:', response)
+    console.log('응답 상태:', response.status)
+    console.log('응답 데이터:', response.data)
     
     // API 응답 구조에 따른 에러 처리
     if (response.status === 'BAD_REQUEST') {

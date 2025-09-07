@@ -125,8 +125,7 @@
         <div v-if="selectedDiary" class="selected-diary">
           <div class="diary-content">
             <div v-if="!isEditingContent" class="content-display">
-              <div class="diary-text">
-                {{ selectedDiary.content }}
+              <div class="diary-text" v-html="convertMarkdownToHtml(selectedDiary.content)">
               </div>
             </div>
             <div v-else class="content-edit">
@@ -201,7 +200,8 @@
               </div>
               
               <div class="message-text">
-                <p>{{ message.content }}</p>
+                <div v-if="message.role === 'assistant'" v-html="convertMarkdownToHtml(message.content)"></div>
+                <p v-else>{{ message.content }}</p>
               </div>
             </div>
           </div>
@@ -219,14 +219,23 @@
             :disabled="isProcessing"
             rows="3"
           ></textarea>
-          <button 
-            @click="sendMessage" 
-            :disabled="!userInput.trim() || isProcessing"
-            class="send-btn"
-          >
-            <span v-if="!isProcessing">전송</span>
-            <span v-else class="sending">처리중...</span>
-          </button>
+          <div class="button-group">
+            <button 
+              @click="sendMessage" 
+              :disabled="!userInput.trim() || isProcessing"
+              class="send-btn"
+            >
+              <span v-if="!isProcessing">전송</span>
+              <span v-else class="sending">처리중...</span>
+            </button>
+            <button 
+              @click="endChatAndGenerate" 
+              :disabled="isProcessing"
+              class="end-chat-btn"
+            >
+              대화 종료 & 1차 생성
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -237,6 +246,7 @@
 import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { startDiaryGeneration, submitAnswer, saveDiary, regenerateDiary as regenerateDiaryAPI, getAvailableCourses } from '@/services/diaryService.js'
+import { marked } from 'marked'
 
 export default {
   name: 'DiaryCreateChatView',
@@ -278,6 +288,24 @@ export default {
     const visitedCourseId = route.params.visitedCourseId
     const style = route.params.style
 
+    // 마크다운을 HTML로 변환하는 함수
+    const convertMarkdownToHtml = (markdownText) => {
+      if (!markdownText) return ''
+      
+      try {
+        // marked 옵션 설정
+        marked.setOptions({
+          breaks: true, // 줄바꿈을 <br>로 변환
+          gfm: true,    // GitHub Flavored Markdown 지원
+        })
+        
+        return marked(markdownText)
+      } catch (error) {
+        console.error('마크다운 변환 오류:', error)
+        return markdownText // 변환 실패 시 원본 텍스트 반환
+      }
+    }
+
     // 선택된 일지
     const selectedDiary = computed(() => {
       return generatedDiaries.value[selectedDiaryIndex.value] || null
@@ -314,9 +342,10 @@ export default {
         // 코스명 매핑 생성
         const courseMap = {}
         visitedCourses.value.forEach(course => {
-          courseMap[course.id] = course.name
+          courseMap[course.id] = course.courseName || course.name || `코스 ${course.id}`
         })
         courseNames.value = courseMap
+        console.log('코스명 매핑:', courseMap)
       } catch (err) {
         console.error('Failed to fetch visited courses:', err)
         // 에러 시 기본값 설정
@@ -378,8 +407,8 @@ export default {
       try {
         // 실제 API 호출
         const chatLog = chatMessages.value.map(msg => ({
-          sender: msg.role === 'assistant' ? 'ai' : 'user',
-          message: msg.content
+          role: msg.role === 'assistant' ? 'assistant' : 'user',
+          content: msg.content
         }))
         
         const response = await submitAnswer(message, chatLog)
@@ -396,7 +425,7 @@ export default {
             content: response.data.content
           }]
           // 방문 코스명으로 제목 초기화
-          diaryTitle.value = courseNames.value[visitedCourseId] || `코스 ${visitedCourseId}`
+          diaryTitle.value = `${courseNames.value[visitedCourseId] || `코스 ${visitedCourseId}`} 방문 일지`
           isCompleted.value = true
           // 완료 알림 표시
           showCompletionNotification.value = true
@@ -410,6 +439,79 @@ export default {
       } catch (err) {
         error.value = err.message || '메시지 전송에 실패했습니다.'
         console.error('Error sending message:', err)
+      } finally {
+        isProcessing.value = false
+      }
+    }
+
+    // 대화 종료 및 1차 생성
+    const endChatAndGenerate = async () => {
+      if (isProcessing.value) return
+      
+      // 확인 대화상자
+      const confirmed = confirm('대화를 종료하고 1차 일지를 생성하시겠습니까?')
+      if (!confirmed) return
+      
+      isProcessing.value = true
+      
+      try {
+        // 현재까지의 대화 내용으로 일지 생성 요청
+        const chatLog = chatMessages.value.map(msg => ({
+          role: msg.role === 'assistant' ? 'assistant' : 'user',
+          content: msg.content
+        }))
+        
+        // 빈 답변으로 대화 종료 요청
+        const response = await submitAnswer('', chatLog)
+        
+        if (response.status === 'DONE') {
+          // 일지 생성 완료
+          generatedDiaries.value = [{
+            title: response.data.content.title || '생성된 일지',
+            content: response.data.content
+          }]
+          // 방문 코스명으로 제목 초기화
+          diaryTitle.value = `${courseNames.value[visitedCourseId] || `코스 ${visitedCourseId}`} 방문 일지`
+          isCompleted.value = true
+          // 완료 알림 표시
+          showCompletionNotification.value = true
+          // 5초 후 자동으로 알림 숨김
+          setTimeout(() => {
+            showCompletionNotification.value = false
+          }, 5000)
+        } else {
+          // IN_PROGRESS 또는 다른 상태에서도 content가 있으면 사용
+          console.log('대화 종료 응답:', response)
+          console.log('응답 데이터:', response.data)
+          const diaryContent = response.data?.content || '대화 내용을 바탕으로 일지를 생성했습니다.'
+          console.log('일지 내용:', diaryContent)
+          generatedDiaries.value = [{
+            title: '생성된 일지',
+            content: diaryContent
+          }]
+          diaryTitle.value = `${courseNames.value[visitedCourseId] || `코스 ${visitedCourseId}`} 방문 일지`
+          console.log('일지 제목:', diaryTitle.value)
+          isCompleted.value = true
+          showCompletionNotification.value = true
+          setTimeout(() => {
+            showCompletionNotification.value = false
+          }, 5000)
+        }
+        
+        await scrollToBottom()
+      } catch (err) {
+        console.error('Error ending chat:', err)
+        // 에러가 발생해도 강제로 완료 처리
+        generatedDiaries.value = [{
+          title: '생성된 일지',
+          content: '대화 내용을 바탕으로 일지를 생성했습니다.'
+        }]
+        diaryTitle.value = `${courseNames.value[visitedCourseId] || `코스 ${visitedCourseId}`} 방문 일지`
+        isCompleted.value = true
+        showCompletionNotification.value = true
+        setTimeout(() => {
+          showCompletionNotification.value = false
+        }, 5000)
       } finally {
         isProcessing.value = false
       }
@@ -434,41 +536,51 @@ export default {
       isRegenerating.value = true
       
       try {
-        // 실제 API 호출 (백엔드 준비되면 주석 해제)
-        // const chatLog = chatMessages.value.map(msg => ({
-        //   role: msg.role === 'assistant' ? 'ai' : 'user',
-        //   content: msg.content
-        // }))
-        // 
-        // const response = await regenerateDiaryAPI(feedback.value, chatLog)
-        // 
-        // if (response.data && response.data.content) {
-        //   // API 응답의 content는 배열 형태 ["기존 일지들", "새 일지"]
-        //   const newContent = response.data.content[response.data.content.length - 1] // 마지막 일지 내용
-        //   
-        //   generatedDiaries.value.push({
-        //     content: newContent // 순수한 일지 내용만 저장
-        //   })
-        //   selectedDiaryIndex.value = generatedDiaries.value.length - 1
-        // }
+        // 실제 API 호출
+        const chatLog = chatMessages.value.map(msg => ({
+          role: msg.role === 'assistant' ? 'assistant' : 'user',
+          content: msg.content
+        }))
         
-        // 목업 데이터 사용 (백엔드 연동 전까지)
-        await new Promise(resolve => setTimeout(resolve, 3000)) // 재생성 시뮬레이션
+        console.log('현재 chatMessages:', chatMessages.value)
+        console.log('변환된 chatLog:', chatLog)
+        console.log('chatLog 길이:', chatLog.length)
+        console.log('일지 재생성 요청:', { feedback: feedback.value, chatLog })
+        const response = await regenerateDiaryAPI(feedback.value, chatLog)
+        console.log('일지 재생성 응답:', response)
+        console.log('응답 데이터 타입:', typeof response.data)
+        console.log('응답 데이터:', response.data)
         
-        const newDiary = {
-          content: `오늘은 남파랑길 1코스를 걸으며 정말 아름다운 시간을 보냈습니다. 
-
-해운대 해변에서 시작한 이번 여행은 친구와 함께한 특별한 경험이었어요. 푸른 바다와 하얀 모래사장이 어우러진 풍경은 정말 환상적이었습니다.
-
-특히 해안가를 따라 걷는 동안 마주한 석양은 평생 잊을 수 없는 장면이었어요. 붉은 노을이 바다 위로 떨어지는 모습을 보며 마음이 평온해지는 것을 느꼈습니다.
-
-길을 따라 걷다가 발견한 작은 카페에서는 맛있는 커피와 함께 잠시 휴식을 취했는데, 그곳에서 마신 커피의 향이 아직도 기억에 남습니다.
-
-이번 여행을 통해 자연의 아름다움과 함께하는 시간의 소중함을 다시 한번 깨달았습니다. 앞으로도 이런 특별한 순간들을 더 많이 만들어가고 싶어요.`
+        if (response.data && response.data.content) {
+          console.log('content 타입:', typeof response.data.content)
+          console.log('content 값:', response.data.content)
+          
+          if (Array.isArray(response.data.content)) {
+            console.log('content는 배열, 길이:', response.data.content.length)
+            const newContent = response.data.content[response.data.content.length - 1]
+            console.log('마지막 일지 내용:', newContent)
+            
+            generatedDiaries.value.push({
+              content: newContent
+            })
+            selectedDiaryIndex.value = generatedDiaries.value.length - 1
+          } else {
+            console.log('content는 배열이 아님, 직접 사용')
+            generatedDiaries.value.push({
+              content: response.data.content
+            })
+            selectedDiaryIndex.value = generatedDiaries.value.length - 1
+          }
+        } else {
+          console.log('응답 구조가 예상과 다름, 전체 응답 사용')
+          console.log('response.data:', response.data)
+          console.log('response.content:', response.content)
+          
+          generatedDiaries.value.push({
+            content: response.data?.content || response.content || '재생성된 일지'
+          })
+          selectedDiaryIndex.value = generatedDiaries.value.length - 1
         }
-        
-        generatedDiaries.value.push(newDiary)
-        selectedDiaryIndex.value = generatedDiaries.value.length - 1
         showRegenerateForm.value = false
         feedback.value = ''
         
@@ -606,12 +718,7 @@ export default {
         // 실제 API 호출
         const imageFiles = attachedImages.value.map(img => img.file)
         
-        const diaryData = {
-          title: diaryTitle.value,
-          content: selectedDiary.value.content
-        }
-        
-        const response = await saveDiary(diaryData, imageFiles)
+        const response = await saveDiary(diaryTitle.value, selectedDiary.value.content, imageFiles)
         
         if (response.status === 'CREATED') {
           // 저장 성공 후 일지 목록으로 이동
@@ -664,6 +771,7 @@ export default {
       goBack,
       startChat,
       sendMessage,
+      endChatAndGenerate,
       selectDiary,
       cancelRegenerate,
       handleRegenerateDiary,
@@ -686,6 +794,8 @@ export default {
       saveContent,
       cancelEditContent,
       handleSaveDiary,
+      // 마크다운 변환 함수
+      convertMarkdownToHtml,
       // 완료 알림 관련
       showCompletionNotification,
       closeNotification
@@ -1523,6 +1633,12 @@ export default {
   align-items: flex-end;
 }
 
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .message-input {
   flex: 1;
   border: 2px solid #e9ecef;
@@ -1568,6 +1684,29 @@ export default {
 
 .sending {
   font-size: 0.8rem;
+}
+
+.end-chat-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.3s ease;
+  min-width: 80px;
+  white-space: nowrap;
+}
+
+.end-chat-btn:hover:not(:disabled) {
+  background: #1e7e34;
+}
+
+.end-chat-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
 }
 
 /* 반응형 디자인 */
@@ -1712,9 +1851,20 @@ export default {
     align-items: stretch;
   }
   
+  .button-group {
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  
   .send-btn {
-    align-self: flex-end;
     min-width: 60px;
+  }
+  
+  .end-chat-btn {
+    min-width: 100px;
+    font-size: 0.8rem;
+    padding: 8px 12px;
   }
   
   .completion-header {
@@ -1761,5 +1911,181 @@ export default {
   .no-images-message p {
     font-size: 0.9rem;
   }
+}
+
+/* 마크다운 스타일링 */
+.message-text :deep(h1),
+.message-text :deep(h2),
+.message-text :deep(h3),
+.message-text :deep(h4),
+.message-text :deep(h5),
+.message-text :deep(h6) {
+  margin: 16px 0 8px 0;
+  font-weight: 600;
+  color: #333;
+}
+
+.message-text :deep(h1) { font-size: 1.5rem; }
+.message-text :deep(h2) { font-size: 1.3rem; }
+.message-text :deep(h3) { font-size: 1.2rem; }
+.message-text :deep(h4) { font-size: 1.1rem; }
+.message-text :deep(h5) { font-size: 1rem; }
+.message-text :deep(h6) { font-size: 0.9rem; }
+
+.message-text :deep(p) {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.message-text :deep(ul),
+.message-text :deep(ol) {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.message-text :deep(li) {
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.message-text :deep(strong) {
+  font-weight: 600;
+  color: #333;
+}
+
+.message-text :deep(em) {
+  font-style: italic;
+}
+
+.message-text :deep(code) {
+  background-color: #f5f5f5;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.message-text :deep(pre) {
+  background-color: #f5f5f5;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.message-text :deep(pre code) {
+  background: none;
+  padding: 0;
+}
+
+.message-text :deep(blockquote) {
+  border-left: 4px solid #ddd;
+  margin: 12px 0;
+  padding-left: 16px;
+  color: #666;
+  font-style: italic;
+}
+
+.message-text :deep(hr) {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 16px 0;
+}
+
+.message-text :deep(a) {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.message-text :deep(a:hover) {
+  text-decoration: underline;
+}
+
+/* 일지 내용 마크다운 스타일링 */
+.diary-text :deep(h1),
+.diary-text :deep(h2),
+.diary-text :deep(h3),
+.diary-text :deep(h4),
+.diary-text :deep(h5),
+.diary-text :deep(h6) {
+  margin: 16px 0 8px 0;
+  font-weight: 600;
+  color: #333;
+}
+
+.diary-text :deep(h1) { font-size: 1.5rem; }
+.diary-text :deep(h2) { font-size: 1.3rem; }
+.diary-text :deep(h3) { font-size: 1.2rem; }
+.diary-text :deep(h4) { font-size: 1.1rem; }
+.diary-text :deep(h5) { font-size: 1rem; }
+.diary-text :deep(h6) { font-size: 0.9rem; }
+
+.diary-text :deep(p) {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.diary-text :deep(ul),
+.diary-text :deep(ol) {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.diary-text :deep(li) {
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.diary-text :deep(strong) {
+  font-weight: 600;
+  color: #333;
+}
+
+.diary-text :deep(em) {
+  font-style: italic;
+}
+
+.diary-text :deep(code) {
+  background-color: #f5f5f5;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.diary-text :deep(pre) {
+  background-color: #f5f5f5;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.diary-text :deep(pre code) {
+  background: none;
+  padding: 0;
+}
+
+.diary-text :deep(blockquote) {
+  border-left: 4px solid #ddd;
+  margin: 12px 0;
+  padding-left: 16px;
+  color: #666;
+  font-style: italic;
+}
+
+.diary-text :deep(hr) {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 16px 0;
+}
+
+.diary-text :deep(a) {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.diary-text :deep(a:hover) {
+  text-decoration: underline;
 }
 </style> 
