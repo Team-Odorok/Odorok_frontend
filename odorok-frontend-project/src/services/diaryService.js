@@ -6,12 +6,13 @@ import axios from 'axios'
 import { getAccessToken } from './authService'
 
 // 일지 관련 API 서비스
-const API_BASE_URL = 'http://18.208.139.237:8080/api'
+const API_BASE_URL = 'http://odorok.duckdns.org:8080/api'
 
 // Axios 인스턴스 생성
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
+  withCredentials: true, // 쿠키 포함
   headers: {
     'Content-Type': 'application/json'
   }
@@ -65,8 +66,15 @@ apiClient.interceptors.response.use(
 )
 
 // 일지 목록 조회
-export const getDiaryList = (groupBy) => {
-  return apiClient.get(`/diaries?groupBy=${groupBy}`)  // ✅ 토큰 자동 첨부됨
+export const getDiaryList = async (groupBy) => {
+  try {
+    const response = await apiClient.get(`/diaries?groupBy=${groupBy}`)
+    console.log('다이어리 목록 API 응답:', response)
+    return response
+  } catch (error) {
+    console.error('Failed to fetch diary list:', error)
+    throw error
+  }
 }
 
 // 일지 상세 조회
@@ -268,7 +276,7 @@ export const regenerateDiary = async (feedback = '', chatLog = []) => {
 export const testApiConnection = async () => {
   try {
     console.log('API 연결 테스트 시작...')
-    console.log('서버 주소:', 'http://18.208.139.237:8080')
+    console.log('서버 주소:', 'http://odorok.duckdns.org:8080')
     console.log('현재 토큰:', getAccessToken() ? '있음' : '없음')
     
     // GET 메서드만 사용하는 엔드포인트들 테스트

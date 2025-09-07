@@ -50,11 +50,17 @@ npm run preview
 
 ## API 연동
 
-현재는 목업 데이터를 사용하고 있습니다. 백엔드 API가 준비되면 다음 단계로 연동할 수 있습니다:
+백엔드 API와 연동되어 있습니다. 다음 설정들이 적용되어 있습니다:
 
-1. `src/services/diaryService.js`에서 실제 API 엔드포인트 설정
-2. `src/views/DiaryListView.vue`에서 주석 처리된 API 호출 코드 활성화
-3. JWT 토큰 관리 로직 구현
+1. `src/services/diaryService.js`에서 API 엔드포인트 설정 완료
+2. `src/views/DiaryListView.vue`에서 API 호출 코드 활성화
+3. JWT 토큰 관리 로직 구현 완료
+
+### API 서버 정보
+
+- **서버 주소**: `http://odorok.duckdns.org:8080`
+- **API 경로**: `/api`
+- **스웨거 문서**: `http://odorok.duckdns.org:8080/api/swagger-ui/index.html`
 
 ### API 엔드포인트
 

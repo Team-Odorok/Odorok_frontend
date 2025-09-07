@@ -49,14 +49,21 @@
         <p><strong>이메일:</strong> wonjun@mail.com</p>
         <p><strong>비밀번호:</strong> 123</p>
       </div>
+      
+      <div class="swagger-link">
+        <a :href="swaggerUrl" target="_blank" class="swagger-btn">
+          스웨거 문서 확인
+        </a>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { login } from '@/services/authService'
+import authClient from '@/services/authClient'
 
 export default {
   name: 'LoginView',
@@ -67,6 +74,10 @@ export default {
     const loading = ref(false)
     const error = ref('')
     
+    // 현재 API URL과 스웨거 URL 계산
+    const currentApiUrl = computed(() => authClient.defaults.baseURL)
+    const swaggerUrl = computed(() => `${currentApiUrl.value}/api/swagger-ui/index.html`)
+    
     const handleLogin = async () => {
       loading.value = true
       error.value = ''
@@ -76,18 +87,34 @@ export default {
         console.log('로그인 성공! 메인 페이지로 이동합니다.')
         router.push('/diaries')
       } catch (err) {
-        error.value = err.message || '로그인에 실패했습니다.'
         console.error('로그인 에러:', err)
+        
+        // 에러 상태에 따른 구체적인 메시지 제공
+        if (err.response?.status === 403) {
+          error.value = '서버 접근이 거부되었습니다. 서버 설정을 확인해주세요.'
+        } else if (err.response?.status === 401) {
+          error.value = '이메일 또는 비밀번호가 올바르지 않습니다.'
+        } else if (err.response?.status === 404) {
+          error.value = '로그인 엔드포인트를 찾을 수 없습니다.'
+        } else if (err.response?.status === 500) {
+          error.value = '서버 내부 오류가 발생했습니다.'
+        } else if (err.code === 'ERR_NETWORK') {
+          error.value = '네트워크 연결을 확인해주세요.'
+        } else {
+          error.value = err.message || '로그인에 실패했습니다.'
+        }
       } finally {
         loading.value = false
       }
     }
+    
     
     return {
       username,
       password,
       loading,
       error,
+      swaggerUrl,
       handleLogin
     }
   }
@@ -165,6 +192,28 @@ export default {
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.3s;
+}
+
+
+.swagger-link {
+  margin-top: 15px;
+}
+
+.swagger-btn {
+  display: inline-block;
+  background: #17a2b8;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.swagger-btn:hover {
+  background: #138496;
+  color: white;
+  text-decoration: none;
 }
 
 .login-btn:hover:not(:disabled) {

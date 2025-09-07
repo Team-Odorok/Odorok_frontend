@@ -330,8 +330,24 @@ export default {
     const availableYears = computed(() => {
       const years = new Set()
       diaries.value.forEach(diary => {
-        const year = new Date(diary.createdAt).getFullYear()
-        years.add(year)
+        try {
+          // visitedAt을 우선적으로 사용 (실제 방문 날짜)
+          const dateField = diary.visitedAt || diary.createdAt
+          if (!dateField) return
+          
+          const date = new Date(dateField)
+          
+          // 날짜가 유효한지 확인
+          if (isNaN(date.getTime())) {
+            console.warn('유효하지 않은 날짜:', dateField)
+            return
+          }
+          
+          const year = date.getFullYear()
+          years.add(year)
+        } catch (error) {
+          console.error('연도 추출 중 오류:', error, diary)
+        }
       })
       return Array.from(years).sort((a, b) => b - a) // 최신 연도부터 정렬
     })
@@ -340,24 +356,51 @@ export default {
     const groupDiariesByMonth = (diaryList) => {
       const grouped = {}
       diaryList.forEach(diary => {
-        const date = new Date(diary.createdAt)
-        const year = date.getFullYear()
-        const month = date.getMonth() + 1
-        const key = `${year}-${month.toString().padStart(2, '0')}`
-        
-        if (!grouped[key]) {
-          grouped[key] = {
-            year: year,
-            month: month,
-            diaries: []
+        try {
+          // visitedAt을 우선적으로 사용 (실제 방문 날짜)
+          const dateField = diary.visitedAt || diary.createdAt
+          if (!dateField) {
+            console.warn('날짜 필드가 없는 다이어리:', diary)
+            return
           }
+          
+          const date = new Date(dateField)
+          
+          // 날짜가 유효한지 확인
+          if (isNaN(date.getTime())) {
+            console.warn('유효하지 않은 날짜:', dateField, diary)
+            return
+          }
+          
+          const year = date.getFullYear()
+          const month = date.getMonth() + 1
+          const key = `${year}-${month.toString().padStart(2, '0')}`
+          
+          if (!grouped[key]) {
+            grouped[key] = {
+              year: year,
+              month: month,
+              diaries: []
+            }
+          }
+          grouped[key].diaries.push(diary)
+        } catch (error) {
+          console.error('그룹핑 중 오류:', error, diary)
         }
-        grouped[key].diaries.push(diary)
       })
       
       // 각 월 그룹 내에서 일지를 방문일 기준으로 정렬
       Object.values(grouped).forEach(group => {
-        group.diaries.sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt))
+        group.diaries.sort((a, b) => {
+          try {
+            const dateA = new Date(a.visitedAt || a.createdAt)
+            const dateB = new Date(b.visitedAt || b.createdAt)
+            return dateB - dateA
+          } catch (error) {
+            console.error('정렬 중 오류:', error)
+            return 0
+          }
+        })
       })
       
       return Object.values(grouped).sort((a, b) => {
@@ -372,12 +415,41 @@ export default {
       
       if (selectedYear.value) {
         filteredDiaries = diaries.value.filter(diary => {
-          const year = new Date(diary.createdAt).getFullYear()
-          return year.toString() === selectedYear.value
+          try {
+            // visitedAt을 우선적으로 사용 (실제 방문 날짜)
+            const dateField = diary.visitedAt || diary.createdAt
+            if (!dateField) {
+              console.log(`날짜 필드 없음: ${diary.title}`)
+              return false
+            }
+            
+            const date = new Date(dateField)
+            const year = date.getFullYear()
+            
+            // 날짜가 유효한지 확인
+            if (isNaN(date.getTime())) {
+              console.warn('유효하지 않은 날짜:', dateField, diary.title)
+              return false
+            }
+            
+            const matches = year.toString() === String(selectedYear.value)
+            console.log(`다이어리: ${diary.title}, 날짜: ${dateField}, 연도: ${year} (${typeof year}), 선택된 연도: ${selectedYear.value} (${typeof selectedYear.value}), 매칭: ${matches}`)
+            
+            if (matches) {
+              console.log(`✅ 매칭된 다이어리: ${diary.title}, 연도: ${year}, 날짜: ${dateField}`)
+            }
+            return matches
+          } catch (error) {
+            console.error('날짜 파싱 오류:', error, diary)
+            return false
+          }
         })
+        console.log(`연도 ${selectedYear.value} 필터링 결과:`, filteredDiaries)
       }
       
-      return groupDiariesByMonth(filteredDiaries)
+      const grouped = groupDiariesByMonth(filteredDiaries)
+      console.log('월별 그룹핑 결과:', grouped)
+      return grouped
     })
 
     // 페이지네이션 관련 계산
@@ -405,7 +477,30 @@ export default {
 
     // 연도 변경 핸들러
     const onYearChange = () => {
+      console.log('선택된 연도:', selectedYear.value)
       currentPage.value = 1 // 연도 변경 시 첫 페이지로 이동
+      
+      // 디버깅을 위한 로그
+      if (selectedYear.value) {
+        const filteredCount = diaries.value.filter(diary => {
+          try {
+            const dateField = diary.visitedAt || diary.createdAt
+            if (!dateField) return false
+            
+            const date = new Date(dateField)
+            if (isNaN(date.getTime())) return false
+            
+            const year = date.getFullYear()
+            return year.toString() === String(selectedYear.value)
+          } catch (error) {
+            console.error('필터링 중 오류:', error, diary)
+            return false
+          }
+        }).length
+        console.log(`연도 ${selectedYear.value}에 해당하는 다이어리 개수:`, filteredCount)
+      } else {
+        console.log('전체 다이어리 개수:', diaries.value.length)
+      }
     }
 
     // 페이지네이션 핸들러
@@ -588,11 +683,39 @@ export default {
       
       try {
         const response = await getDiaryList('year')
+        console.log('API 응답:', response)
         
-        if (response.data) {
-          diaries.value = Object.values(response.data).flat()
+        // API 응답 구조에 따라 다이어리 목록 추출
+        if (response && response.data) {
+          // response.data가 객체인 경우 (연도별 그룹핑)
+          if (typeof response.data === 'object' && !Array.isArray(response.data)) {
+            diaries.value = Object.values(response.data).flat()
+          } else if (Array.isArray(response.data)) {
+            // response.data가 배열인 경우
+            diaries.value = response.data
+          } else {
+            diaries.value = []
+          }
+        } else if (Array.isArray(response)) {
+          // response 자체가 배열인 경우
+          diaries.value = response
         } else {
           diaries.value = []
+        }
+        
+        console.log('추출된 다이어리 목록:', diaries.value)
+        
+        // 첫 번째 다이어리의 날짜 형식 확인
+        if (diaries.value.length > 0) {
+          console.log('첫 번째 다이어리 데이터:', diaries.value[0])
+          console.log('createdAt 필드:', diaries.value[0].createdAt)
+          console.log('visitedAt 필드:', diaries.value[0].visitedAt)
+          
+          // 날짜 파싱 테스트
+          const testDate = new Date(diaries.value[0].createdAt)
+          console.log('파싱된 날짜:', testDate)
+          console.log('연도:', testDate.getFullYear())
+          console.log('월:', testDate.getMonth() + 1)
         }
       } catch (err) {
         error.value = err.message || '일지 목록을 불러오는데 실패했습니다.'
