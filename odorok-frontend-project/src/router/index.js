@@ -28,6 +28,7 @@ const router = createRouter({
       name: 'CommunityDetail',
       component: () => import('../views/CommunityDetailView.vue')
     },
+    { path: '/nearby-attractions', name: 'NearbyAttractions', component: () => import('../views/NearbyAttractionsView.vue') },
     {
       path: '/nearby-attractions/:courseId',
       name: 'nearby-attractions',

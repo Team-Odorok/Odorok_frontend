@@ -4,7 +4,7 @@
       <div class="article-info">
         <h3 class="article-title">{{ article.title }}</h3>
         <div class="article-meta">
-          <span class="author">{{ article.author }}</span>
+          <span class="author">{{ article.author || article.nickname || '' }}</span>
           <span class="date">{{ formatDate(article.createdAt) }}</span>
           <span class="category">{{ getCategoryName(article.category) }}</span>
         </div>
@@ -12,17 +12,17 @@
       <div class="article-stats">
         <div class="stat">
           <span class="icon">❤️</span>
-          <span class="count">{{ article.likeCount }}</span>
+          <span class="count">{{ Number(article.likeCount || 0) }}</span>
         </div>
         <div class="stat">
           <span class="icon">💬</span>
-          <span class="count">{{ article.commentCount }}</span>
+          <span class="count">{{ Number(article.commentCount || 0) }}</span>
         </div>
       </div>
     </div>
     
     <div class="article-content">
-      <p>{{ truncateContent(article.content) }}</p>
+      <p v-if="truncateContent(article.content)">{{ truncateContent(article.content) }}</p>
     </div>
   </div>
 </template>
@@ -42,11 +42,14 @@ export default {
       this.$emit('click', this.article)
     },
     formatDate(dateString) {
+      if (!dateString) return ''
       const date = new Date(dateString)
+      if (isNaN(date.getTime())) return ''
       return date.toLocaleDateString('ko-KR')
     },
     truncateContent(content) {
-      return content.length > 100 ? content.substring(0, 100) + '...' : content
+      const text = content || this.article.summary || ''
+      return text.length > 100 ? text.substring(0, 100) + '...' : text
     },
     getCategoryName(category) {
       const categories = {

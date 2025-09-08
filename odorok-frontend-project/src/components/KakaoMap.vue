@@ -1,6 +1,6 @@
 <template>
-  <div v-if="pathPoints && pathPoints.length > 0" :id="mapId" style="width: 100%; height: 100%;"></div>
-  <div v-else style="color:#888; margin-top:16px;">경로 정보가 없습니다.</div>
+  <div v-if="pathPoints && pathPoints.length > 0" :id="mapId" :style="{ width: '100%', height: computedHeight }"></div>
+  
 </template>
 
 <script>
@@ -30,10 +30,34 @@ export default {
     showAttractionMarkers: {
       type: Boolean,
       default: false
+    },
+    highlightAttractionId: {
+      type: [String, Number],
+      default: null
+    },
+    height: {
+      type: [Number, String],
+      default: 360
     }
   },
   setup(props) {
     const mapId = computed(() => 'map-' + props.courseId)
+    const computedHeight = computed(() => typeof props.height === 'number' ? `${props.height}px` : (props.height || '360px'))
+    let mapInstance = null
+    const markerById = new Map()
+    const infoWindowById = new Map()
+    const closeAllInfoWindows = () => { infoWindowById.forEach(iw => iw.close()) }
+    const focusAttractionById = (id) => {
+      if (!id || !mapInstance) return
+      const key = String(id)
+      const marker = markerById.get(key)
+      const iw = infoWindowById.get(key)
+      if (marker) {
+        mapInstance.setLevel(4)
+        mapInstance.panTo(marker.getPosition())
+        if (iw) { closeAllInfoWindows(); iw.open(mapInstance, marker) }
+      }
+    }
 
     const loadKakaoMapScript = () => {
       if (kakaoMapScriptLoaded) return Promise.resolve()
@@ -122,6 +146,7 @@ export default {
       }
       
       const map = new window.kakao.maps.Map(mapContainer, mapOption)
+      mapInstance = map
       const linePath = props.pathPoints.map(p => new window.kakao.maps.LatLng(p.latitude, p.longitude))
       
       new window.kakao.maps.Polyline({
@@ -140,6 +165,7 @@ export default {
       })
       
       // 명소 마커들 추가 (showAttractionMarkers가 true일 때만)
+      markerById.clear(); infoWindowById.clear()
       if (props.showAttractionMarkers && props.attractions.length > 0) {
         props.attractions.forEach(attraction => {
           if (attraction.latitude && attraction.longitude) {
@@ -168,9 +194,14 @@ export default {
                 </div>
               `
             })
+            const idKey = String(attraction.attractionId || attraction.attrationId || '')
+            if (idKey) { markerById.set(idKey, marker); infoWindowById.set(idKey, infowindow) }
             
             // 마커 클릭 시 정보창 표시
             window.kakao.maps.event.addListener(marker, 'click', function() {
+              closeAllInfoWindows()
+              map.setLevel(4)
+              map.panTo(marker.getPosition())
               infowindow.open(map, marker)
             })
           }
@@ -202,8 +233,11 @@ export default {
       }
     })
 
+    watch(() => props.highlightAttractionId, (id) => { focusAttractionById(id) })
+
     return {
-      mapId
+      mapId,
+      computedHeight
     }
   }
 }

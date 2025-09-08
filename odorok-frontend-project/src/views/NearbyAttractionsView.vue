@@ -21,6 +21,8 @@
             :courseId="courseId" 
             :attractions="filteredAttractions"
             :showAttractionMarkers="true"
+            :highlightAttractionId="selectedAttraction && (selectedAttraction.attractionId || selectedAttraction.attrationId)"
+            :height="560"
           />
         </div>
       </div>
@@ -334,79 +336,82 @@ export default {
 <style scoped>
 .nearby-attractions-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #fafafa;
   width: 100%;
 }
 
 .header-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #fff;
+  color: #222;
   padding: 20px;
   width: 100%;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .header-component h1 {
-  margin: 0 0 10px 0;
-  font-size: 2rem;
+  margin: 0 0 6px 0;
+  font-size: 1.6rem;
 }
 
 .header-component p {
   margin: 0;
-  opacity: 0.9;
+  color: #666;
 }
 
 .navigation-component {
-  margin-top: 15px;
+  margin-top: 12px;
 }
 
 .back-button {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 8px 16px;
+  background: #fff;
+  color: #333;
+  border: 1px solid #e1e8ed;
+  padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #f6f8fa;
 }
 
 .main-content {
-  display: flex;
-  gap: 20px;
-  padding: 20px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+  padding: 16px;
   width: 100%;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 110px);
   box-sizing: border-box;
 }
 
 .map-section {
-  flex: 2;
-  min-height: 600px;
+  min-height: 560px;
   height: 100%;
 }
 
 .map-container {
-  background: #e3f2fd;
-  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   height: 100%;
   width: 100%;
 }
 
 .attractions-section {
-  flex: 1;
-  min-width: 400px;
-  background: #2e7d32;
-  border-radius: 12px;
-  padding: 20px;
-  color: white;
+  min-width: 360px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 16px;
+  color: #222;
   height: 100%;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .filter-section {
@@ -415,8 +420,8 @@ export default {
 }
 
 .filter-section h3 {
-  margin: 0 0 15px 0;
-  color: white;
+  margin: 0 0 10px 0;
+  color: #222;
 }
 
 .content-type-filters {
@@ -426,36 +431,39 @@ export default {
 }
 
 .filter-button {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #fff;
+  color: #333;
+  border: 1px solid #e1e8ed;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: 999px;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.9rem;
 }
 
 .filter-button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #f6f8fa;
 }
 
 .filter-button.active {
-  background: #4caf50;
-  border-color: #4caf50;
+  background: #eef7ff;
+  border-color: #cfe7ff;
+  color: #1d4ed8;
 }
 
+
 .attraction-detail {
-  background: rgba(255, 255, 255, 0.1);
+  background: #fff;
+  border: 1px solid #e9ecef;
   border-radius: 8px;
   padding: 15px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   flex-shrink: 0;
 }
 
 .attraction-detail h3 {
-  margin: 0 0 15px 0;
-  color: white;
+  margin: 0 0 12px 0;
+  color: #222;
 }
 
 .detail-item {
@@ -464,7 +472,7 @@ export default {
 
 .detail-item h4 {
   margin: 0 0 5px 0;
-  color: #81c784;
+  color: #666;
   font-size: 0.9rem;
 }
 
@@ -480,8 +488,9 @@ export default {
   margin-top: 5px;
 }
 
+
 .homepage-link {
-  color: #81c784;
+  color: #1d4ed8;
   text-decoration: none;
   display: inline-block;
   margin-top: 5px;
@@ -499,21 +508,23 @@ export default {
 }
 
 .attractions-list h3 {
-  margin: 0 0 15px 0;
-  color: white;
+  margin: 0 0 12px 0;
+  color: #222;
   flex-shrink: 0;
 }
 
+
 .loading, .error, .no-attractions {
   text-align: center;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e9ecef;
   border-radius: 8px;
   flex-shrink: 0;
 }
 
 .error {
-  color: #ffcdd2;
+  color: #c92a2a;
 }
 
 .attraction-items {
@@ -522,8 +533,10 @@ export default {
   min-height: 0;
 }
 
+
 .attraction-item {
-  background: rgba(255, 255, 255, 0.1);
+  background: #fff;
+  border: 1px solid #e9ecef;
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 10px;
@@ -533,40 +546,46 @@ export default {
   gap: 12px;
 }
 
+
 .attraction-item:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #f8f9fa;
 }
 
+
 .attraction-item.selected {
-  background: #4caf50;
-  border: 2px solid #81c784;
+  border: 2px solid #98c1ff;
+  background: #f6f9ff;
 }
 
 .attraction-info {
   flex: 1;
 }
 
+
 .attraction-info h4 {
   margin: 0 0 5px 0;
-  color: white;
+  color: #222;
   font-size: 1rem;
 }
 
+
 .attraction-type {
   margin: 0 0 3px 0;
-  color: #81c784;
+  color: #1d4ed8;
   font-size: 0.8rem;
 }
+
 
 .attraction-address {
   margin: 0 0 3px 0;
-  color: rgba(255, 255, 255, 0.8);
+  color: #666;
   font-size: 0.8rem;
 }
 
+
 .attraction-phone {
   margin: 0;
-  color: #81c784;
+  color: #2b8a3e;
   font-size: 0.8rem;
 }
 
@@ -585,13 +604,13 @@ export default {
 
 @media (max-width: 768px) {
   .main-content {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     height: auto;
   }
   
   .map-section {
-    min-height: 400px;
-    height: 400px;
+    min-height: 420px;
+    height: 420px;
   }
   
   .attractions-section {

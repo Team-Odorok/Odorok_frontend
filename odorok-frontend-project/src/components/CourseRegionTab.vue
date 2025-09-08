@@ -1,79 +1,70 @@
 <template>
-  <div>
-    <h2>지역별코스 리스트</h2>
-    
-    <!-- 지역 선택 -->
-    <div style="margin-bottom: 20px;">
-      <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-        <label for="sidoSelect">시도:</label>
-        <select id="sidoSelect" v-model="selectedSido" @change="onSidoChange" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+  <div class="section">
+    <div class="head">
+      <h2>지역별 코스</h2>
+      <div class="filters">
+        <label class="label" for="sidoSelect">시도</label>
+        <select id="sidoSelect" v-model="selectedSido" @change="onSidoChange" class="select">
           <option value="">전체</option>
           <option v-for="sido in sidoList" :key="sido.sidoCode" :value="sido.sidoCode">{{ sido.name }}</option>
         </select>
-        
-        <label for="sigunguSelect">시군구:</label>
-        <select id="sigunguSelect" v-model="selectedSigungu" @change="searchByRegion" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        <label class="label" for="sigunguSelect">시군구</label>
+        <select id="sigunguSelect" v-model="selectedSigungu" @change="searchByRegion" class="select">
           <option value="">전체</option>
           <option v-for="sigungu in sigunguList" :key="sigungu.sigunguCode" :value="sigungu.sigunguCode">{{ sigungu.name }}</option>
         </select>
-        
-        <button @click="searchByRegion" :disabled="loading" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-          {{ loading ? '검색 중...' : '검색' }}
-        </button>
+        <button class="btn" @click="searchByRegion" :disabled="loading">{{ loading ? '검색 중...' : '검색' }}</button>
       </div>
     </div>
-    
-    <!-- 로딩 상태 -->
-    <div v-if="loading" style="text-align: center; padding: 20px;">
-      <p>코스 데이터를 불러오는 중...</p>
+
+    <!-- 상단 리스트 -->
+    <div class="listwrap card">
+      <div v-if="loading" class="state">코스 데이터를 불러오는 중...</div>
+      <ul v-else-if="regionCourses.length > 0" class="list">
+        <li v-for="course in regionCourses" :key="course.id" class="item" @click="selectCourse(course)"
+            :class="{ selected: selectedCourse && selectedCourse.id === course.id }">
+          <div class="row">
+            <div class="title">{{ course.name }}</div>
+            <div class="meta">{{ course.distance }}km</div>
+          </div>
+          <div class="chips">
+            <span class="chip">난이도 {{ course.difficulty }}</span>
+            <span class="chip rating">⭐ {{ course.rating }}</span>
+          </div>
+        </li>
+      </ul>
+      <div v-else class="state">해당 지역의 코스 데이터가 없습니다.</div>
     </div>
-    
-    <!-- 코스 목록 -->
-    <ul v-if="regionCourses.length > 0" style="list-style: none; padding: 0;">
-      <li v-for="course in regionCourses" :key="course.id" @click="selectCourse(course)" 
-          style="cursor:pointer; padding: 12px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 6px; transition: all 0.2s;"
-          :class="{ 'selected': selectedCourse && selectedCourse.id === course.id }">
-        <strong>{{ course.name }}</strong> ({{ course.distance }}km)
-        <span style="margin-left:8px; color:#888; font-size:13px;">난이도: {{ course.difficulty }}, 별점: {{ course.rating }}</span>
-      </li>
-    </ul>
-    <div v-else-if="!loading" style="text-align: center; padding: 20px; color: #666;">
-      해당 지역의 코스 데이터가 없습니다.
-    </div>
-    
-    <!-- 상세 정보 영역 -->
-    <div v-if="selectedCourse" style="margin-top:32px; display: flex; flex-direction: column; gap: 24px; align-items: flex-start; border-top: 2px solid #bbb; padding-top: 24px; max-width: 500px;">
-      <div style="font-size: 2rem; font-weight: bold; margin-bottom: 18px;">코스 상세 정보</div>
-      <div style="font-size: 1.2rem; margin-bottom: 10px;"><strong>코스명:</strong> {{ selectedCourse.name }}</div>
-      <div style="font-size: 1.2rem; margin-bottom: 10px;"><strong>코스거리:</strong> {{ selectedCourse.distance }}km</div>
-      <div style="font-size: 1.2rem; margin-bottom: 10px;"><strong>난이도:</strong> {{ selectedCourse.difficulty }}</div>
-      <div style="font-size: 1.2rem; margin-bottom: 10px;"><strong>예상소요시간:</strong> {{ selectedCourse.reqTime }}</div>
-      <div style="font-size: 1.2rem; margin-bottom: 10px;"><strong>별점:</strong> {{ selectedCourse.rating }} / 5.0</div>
-      <div v-if="courseDetail && courseDetail.contents" style="font-size: 1.2rem; margin-bottom: 10px;"><strong>코스 설명:</strong> {{ courseDetail.contents }}</div>
-      
-      <!-- 지도 -->
-      <div v-if="courseDetail && courseDetail.coords && courseDetail.coords.length > 0" style="margin-top: 24px; width: 100%;">
-        <KakaoMap :pathPoints="courseDetail.coords" :courseId="selectedCourse.id" :attractions="attractionsWithEndPoint" />
+
+    <!-- 하단 디테일 -->
+    <div class="detail card" v-if="selectedCourse">
+      <div class="detail-head">
+        <div class="name">{{ selectedCourse.name }}</div>
+        <div class="chips">
+          <span class="chip">거리 {{ selectedCourse.distance }}km</span>
+          <span class="chip">난이도 {{ selectedCourse.difficulty }}</span>
+          <span class="chip">예상 {{ selectedCourse.reqTime }}</span>
+          <span class="chip rating">⭐ {{ selectedCourse.rating }}</span>
+        </div>
+        <div class="actions">
+          <button class="btn outline" @click="goNearby" :disabled="!courseDetail || !courseDetail.coords || !courseDetail.coords.length">주변 명소 보기</button>
+          <button class="btn success" @click="showScheduleModal = true">방문 예정 등록</button>
+        </div>
       </div>
-      
-      <!-- 예정 등록 버튼 -->
-      <div style="margin-top: 20px;">
-        <button @click="showScheduleModal = true" 
-                style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
-          방문 예정 등록
-        </button>
+      <div class="grid">
+        <div class="left">
+          <div v-if="courseDetail && courseDetail.contents" class="desc">{{ courseDetail.contents }}</div>
+        </div>
+        <div class="right">
+          <div v-if="courseDetail && courseDetail.coords && courseDetail.coords.length > 0" class="map-panel">
+            <KakaoMap :pathPoints="courseDetail.coords" :courseId="selectedCourse.id" :attractions="attractionsWithEndPoint" />
+          </div>
+        </div>
       </div>
-      
-      <!-- 코스 리뷰 컴포넌트 -->
-      <CourseReviewComponent v-if="selectedCourse" :courseId="selectedCourse.id" />
-      
-      <!-- 예정 등록 모달 -->
-      <ScheduleRegistrationModal 
-        :visible="showScheduleModal"
-        :course="selectedCourse"
-        @close="showScheduleModal = false"
-        @schedule-registered="handleScheduleRegistered"
-      />
+      <div class="review">
+        <CourseReviewComponent v-if="selectedCourse" :courseId="selectedCourse.id" />
+      </div>
+      <ScheduleRegistrationModal :visible="showScheduleModal" :course="selectedCourse" @close="showScheduleModal = false" @schedule-registered="handleScheduleRegistered" />
     </div>
   </div>
 </template>
@@ -146,6 +137,8 @@ export default {
       this.selectedCourse = course;
     },
     
+    
+    
     // 데이터 정규화 함수
     normalizeCourseData(rawData) {
       if (!rawData || !Array.isArray(rawData)) return [];
@@ -166,6 +159,7 @@ export default {
         contentTypeId: item.contentTypeId || 21
       }));
     },
+    
     
     // 시도 목록 로드
     async loadSidos() {
@@ -274,28 +268,63 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+
+    goNearby() {
+      if (!this.selectedCourse || !this.courseDetail?.coords?.length) {
+        alert('코스를 먼저 선택하세요.')
+        return
+      }
+      this.$router.push({
+        name: 'NearbyAttractions',
+        query: {
+          courseId: this.selectedCourse.id,
+          courseName: this.selectedCourse.name,
+          sidoCode: this.selectedCourse.sidoCode || 1,
+          sigunguCode: this.selectedCourse.sigunguCode || 1,
+          coords: JSON.stringify(this.courseDetail.coords)
+        }
+      })
     }
-  }
+  },
+
 }
 </script>
 
 <style scoped>
-li:hover {
-  background-color: #f8f9fa;
-  border-color: #007bff !important;
-}
+.section { max-width: 1100px; margin: 0 auto; padding: 8px 12px; }
+.head { display:flex; align-items:center; justify-content: space-between; margin-bottom: 10px; }
+.filters { display:flex; gap:8px; align-items:center; }
+.label { font-size:12px; color:#666; }
+.select { padding:8px; border:1px solid #dee2e6; border-radius:6px; background:#fff; }
+.btn { padding:8px 12px; border:1px solid #dee2e6; background:#fff; border-radius:6px; cursor:pointer; }
+.btn.outline { background:#fff; }
+.btn.success { background:#f6fff9; border-color:#d1f1de; }
 
-li.selected {
-  background-color: #e3f2fd;
-  border-color: #007bff !important;
-}
+.card { background:#fff; border:1px solid #e9ecef; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.listwrap { padding:12px; }
+.state { padding:12px; color:#666; text-align:center; }
+.list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
+.item { padding:12px; border:1px solid #e9ecef; border-radius:8px; cursor:pointer; transition: box-shadow .12s, transform .12s; }
+.item:hover { box-shadow:0 4px 12px rgba(0,0,0,.06); transform: translateY(-1px); }
+.item.selected { background:#f6f9ff; border-color:#98c1ff; }
+.row { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+.title { font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.meta { color:#888; font-size:12px; }
+.chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.chip { display:inline-flex; align-items:center; padding:4px 10px; border:1px solid #e9ecef; border-radius:999px; background:#f8f9fa; font-size:12px; color:#555; }
+.chip.rating { background:#fff; }
 
-button:disabled {
-  background: #6c757d !important;
-  cursor: not-allowed;
-}
+.detail { padding:16px; margin-top:12px; }
+.detail-head { display:flex; flex-direction:column; gap:10px; margin-bottom:8px; }
+.detail-head .name { font-size:20px; font-weight:800; }
+.actions { display:flex; gap:8px; flex-wrap:wrap; }
+.grid { display:grid; grid-template-columns: 1.1fr 1fr; gap:16px; align-items:start; }
+.map-panel { height:360px; border:1px solid #e9ecef; border-radius:8px; overflow:hidden; }
+.desc { line-height:1.6; color:#333; white-space:pre-wrap; }
+.review { margin-top:12px; }
 
-select {
-  min-width: 120px;
+@media (max-width: 960px) {
+  .grid { grid-template-columns: 1fr; }
 }
-</style> 
+</style>

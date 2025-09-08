@@ -30,7 +30,7 @@
       
       <!-- 게시글 액션 -->
       <div class="article-actions">
-        <button @click="toggleLike" :class="{ liked: isLiked }">
+        <button @click="toggleLike" :disabled="liking || isLiked" :class="{ liked: isLiked }">
           ❤️ {{ article.likeCount }}
         </button>
         <button @click="goBack" class="back-button">목록으로</button>
@@ -106,9 +106,11 @@ export default {
     const loading = ref(false)
     const error = ref(null)
     const isLiked = ref(false)
+    const liking = ref(false)
     
     // 게시글 ID 가져오기
     const articleId = route.params.id
+    const localLikedKey = `article_liked_${articleId}`
     
     // 게시글 조회
     const fetchArticle = async () => {
@@ -117,11 +119,21 @@ export default {
       
       try {
         const response = await communityApi.getArticle(articleId)
-        
-        if (response.status === 'success') {
-          article.value = response.data
+        // API가 data만 반환하는 형태까지 허용
+        article.value = response?.data || response || null
+        if (!article.value) {
+          error.value = '게시글을 불러오는데 실패했습니다.'
         } else {
-          error.value = response.message || '게시글을 불러오는데 실패했습니다.'
+          // 서버가 liked 여부를 내려줄 경우 동기화
+          if (Object.prototype.hasOwnProperty.call(article.value, 'liked')) {
+            isLiked.value = !!article.value.liked
+          }
+          // 서버가 liked를 주지 않더라도, 로컬 잠금이 있으면 막기
+          try {
+            if (localStorage.getItem(localLikedKey) === '1') {
+              isLiked.value = true
+            }
+          } catch (_) {}
         }
       } catch (err) {
         console.error('게시글 조회 실패:', err)
@@ -139,17 +151,20 @@ export default {
     
     // 좋아요 토글
     const toggleLike = async () => {
+      if (liking.value || isLiked.value) return
+      liking.value = true
       try {
-        const response = await communityApi.toggleLike(articleId)
-        if (response.status === 'success') {
-          isLiked.value = !isLiked.value
-          // 좋아요 수 업데이트
-          if (article.value) {
-            article.value.likeCount += isLiked.value ? 1 : -1
-          }
+        await communityApi.toggleLike(articleId)
+        // 서버 값을 신뢰하도록 재조회
+        await fetchArticle()
+        if (!isLiked.value) {
+          isLiked.value = true
         }
+        try { localStorage.setItem(localLikedKey, '1') } catch (_) {}
       } catch (error) {
         console.error('좋아요 토글 실패:', error)
+      } finally {
+        liking.value = false
       }
     }
     
@@ -164,9 +179,7 @@ export default {
     const fetchComments = async () => {
       try {
         const response = await communityApi.getComments(articleId)
-        if (response.status === 'success') {
-          comments.value = response.data || []
-        } 
+        comments.value = response?.data || response || []
       } catch (error) {
         console.error('댓글 조회 실패:', error)
         error.value = '댓글을 불러오는데 실패했습니다.'
@@ -177,13 +190,9 @@ export default {
       if (!newComment.value.trim()) return
       
       try {
-        const response = await communityApi.createComment(articleId, {
-          content: newComment.value
-        })
-        if (response.status === 'success') {
-          newComment.value = ''
-          await fetchComments()
-        }
+        await communityApi.createComment(articleId, { content: newComment.value })
+        newComment.value = ''
+        await fetchComments()
       } catch (error) {
         console.error('댓글 작성 실패:', error)
         alert('댓글 작성에 실패했습니다.')
@@ -194,12 +203,8 @@ export default {
       if (!confirm('댓글을 삭제하시겠습니까?')) return
       
       try {
-        const response = await communityApi.deleteComment(articleId, {
-          content: commentId  // API 명세에 따라 content 필드로 전송
-        })
-        if (response.status === 'success') {
-          await fetchComments()
-        }
+        await communityApi.deleteComment(commentId)
+        await fetchComments()
       } catch (error) {
         console.error('댓글 삭제 실패:', error)
         alert('댓글 삭제에 실패했습니다.')
@@ -213,20 +218,28 @@ export default {
     }
 
     const saveEditComment = async (comment) => {
-      if (!comment.editContent.trim()) return
-      
+      if (!comment || !comment.id) {
+        alert('댓글 정보가 올바르지 않습니다.')
+        return
+      }
+      const nextContent = (comment.editContent || '').trim()
+      if (!nextContent) {
+        alert('내용을 입력하세요.')
+        return
+      }
       try {
-        const response = await communityApi.updateComment(comment.id, {
-          content: comment.editContent
-        })
-        if (response.status === 'success') {
-          comment.content = comment.editContent
+        await communityApi.updateComment(comment.id, { content: nextContent })
+        // 서버 기준으로 다시 불러와 동기화
+        await fetchComments()
+      } catch (error) {
+        console.error('댓글 수정 실패:', error)
+        const msg = error?.response?.data?.message || '댓글 수정에 실패했습니다.'
+        alert(msg)
+      } finally {
+        if (comment) {
           comment.isEditing = false
           delete comment.editContent
         }
-      } catch (error) {
-        console.error('댓글 수정 실패:', error)
-        alert('댓글 수정에 실패했습니다.')
       }
     }
 
@@ -246,6 +259,7 @@ export default {
       loading,
       error,
       isLiked,
+      liking,
       fetchArticle,
       formatDate,
       toggleLike,

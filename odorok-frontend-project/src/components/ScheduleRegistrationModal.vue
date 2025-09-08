@@ -183,16 +183,20 @@
         
         this.submitting = true
         try {
-          const userEmail = 'test@example.com'
-          const dueDate = this.selectedDate.toISOString().split('T')[0]
-          
+          const token = localStorage.getItem('accessToken')
+          const payload = token ? JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))) : null
+          const userEmail = payload?.email || payload?.sub
+          const attractionIds = this.selectedAttractions.map(Number)
+          const due = this.selectedDate.toISOString().split('T')[0]
+          const cid = this.course?.courseId ?? this.course?.id
+
+
           await courseApi.registerSchedule(
-            this.course.id,
-            dueDate,
+            cid,
+            due,
             userEmail,
-            this.selectedAttractions
+            attractionIds
           )
-          
           this.$emit('schedule-registered')
           this.closeModal()
           alert('방문 예정이 등록되었습니다.')

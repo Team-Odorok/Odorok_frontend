@@ -46,6 +46,10 @@ export default {
       title: '',
       content: '',
       notice: false,
+      // 문서 스펙 필드(임시 기본값). 실제 값 연결 시 UI에서 설정하도록 확장 가능
+      boardType: 1,
+      diseaseId: null,
+      courseId: null,
     })
     
     const selectedImages = ref([])
@@ -89,8 +93,15 @@ export default {
         const jsonData = {
           title: formData.value.title,
           content: formData.value.content,
-          notice: formData.value.notice,
+          notice: !!formData.value.notice,
         }
+        // 숫자 필드가 유효하면 포함(스펙: boardType, diseaseId, courseId)
+        const bt = Number(formData.value.boardType)
+        if (!Number.isNaN(bt)) jsonData.boardType = bt
+        const did = Number(formData.value.diseaseId)
+        if (!Number.isNaN(did) && formData.value.diseaseId !== null && formData.value.diseaseId !== '') jsonData.diseaseId = did
+        const cid = Number(formData.value.courseId)
+        if (!Number.isNaN(cid) && formData.value.courseId !== null && formData.value.courseId !== '') jsonData.courseId = cid
 
         formDataToSend.append('data', new Blob([JSON.stringify(jsonData)], {
           type: 'application/json'

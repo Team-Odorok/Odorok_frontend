@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // 환경변수로 API URL 관리 (개발/운영 환경 분리)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://odorok.duckdns.org';
+// 기본값을 '/api'로 두어 프록시를 통해 백엔드로 전달되도록 함
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // axios 인스턴스 생성
 const apiClient = axios.create({
@@ -27,18 +28,24 @@ let isRefreshing = false;
 
 // 요청 인터셉터 추가
 apiClient.interceptors.request.use(
-  config => {
-    // 새로고침 중이면 요청 취소
-    if (isRefreshing) {
-      console.log('새로고침 중 - 요청 취소');
-      return Promise.reject(new Error('새로고침 중 요청 취소'));
+  (config) => {
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token')
+    if (token) {
+      // axios v1에서 headers가 AxiosHeaders일 수도 있어 set 사용
+      if (config.headers && typeof config.headers.set === 'function') {
+        config.headers.set('Authorization', `Bearer ${token}`)
+      } else {
+        config.headers = config.headers || {}
+        config.headers['Authorization'] = `Bearer ${token}`
+      }
     }
-    return config;
+    if (isRefreshing) {
+      return Promise.reject(new Error('새로고침 중 요청 취소'))
+    }
+    return config
   },
-  error => {
-    return Promise.reject(error);
-  }
-);
+  (error) => Promise.reject(error)
+)
 
 // 응답 인터셉터 추가
 apiClient.interceptors.response.use(
@@ -167,7 +174,7 @@ const courseApi = {
   // 시도 코드 조회
   getSidos: async () => {
     try {
-      const response = await apiClient.get('/regions/sidos');
+      const response = await apiClient.get('/regions/sido');
       return response.data;
     } catch (error) {
       console.error('시도 코드 조회 실패:', error);
@@ -178,7 +185,7 @@ const courseApi = {
   // 시군구 코드 조회
   getSigungus: async (sidoCode) => {
     try {
-      const response = await apiClient.get('/sigungus', {
+      const response = await apiClient.get('/regions/sigungu', {
         params: { sidoCode }
       });
       return response.data;
@@ -199,11 +206,37 @@ const courseApi = {
     }
   },
 
+  // TOP 코스(별점/방문/리뷰) 조회
+  getTopCourses: async (email) => {
+    try {
+      const params = {}
+      if (email) params.email = email
+      const response = await apiClient.get('/courses/top', { params })
+      return response.data
+    } catch (error) {
+      console.error('TOP 코스 조회 실패:', error)
+      throw error
+    }
+  },
+
+  // 사용자 질병 코스 리스트 조회
+  getDiseaseCourses: async (email, diseaseId = null, page = 0, size = 10, sort = 'created_at, asc') => {
+    try {
+      const params = { email, page, size, sort }
+      if (diseaseId !== null && diseaseId !== undefined) params.diseaseId = diseaseId
+      const response = await apiClient.get('/courses/disease', { params })
+      return response.data
+    } catch (error) {
+      console.error('질병 코스 조회 실패:', error)
+      throw error
+    }
+  },
+
   // 명소 상세 정보 조회
   getAttractionDetail: async (attractionId) => {
     try {
       const response = await apiClient.get('/attractions/detail', {
-        params: { attrationId }
+        params: { attractionId }
       });
       return response.data;
     } catch (error) {
@@ -228,7 +261,7 @@ const courseApi = {
   // 예정 등록
   registerSchedule: async (courseId, dueDate, email, attractionIds) => {
     try {
-      const response = await apiClient.post('/courses/schedules', {
+      const response = await apiClient.post('/courses/schedule', {
         courseId,
         dueDate,
         email,
@@ -244,12 +277,9 @@ const courseApi = {
   // 방문 예정 리스트 조회
   getScheduledCourses: async (email) => {
     try {
-      const response = await apiClient.get('/course/schedule', {
-        params: { email }
-      });
+      const response = await apiClient.get('/course/schedule', { params: { email } });
       return response.data;
     } catch (error) {
-      console.error('방문 예정 리스트 조회 실패:', error);
       throw error;
     }
   }
