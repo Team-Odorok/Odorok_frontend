@@ -50,6 +50,10 @@
         <p><strong>비밀번호:</strong> 123</p>
       </div>
       
+      <div class="signup-link">
+        <p>계정이 없으신가요? <router-link to="/signup">회원가입</router-link></p>
+      </div>
+      
       <div class="swagger-link">
         <a :href="swaggerUrl" target="_blank" class="swagger-btn">
           스웨거 문서 확인
@@ -250,5 +254,27 @@ export default {
 .demo-info p {
   margin: 5px 0;
   color: #666;
+}
+
+.signup-link {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e1e5e9;
+}
+
+.signup-link p {
+  color: #666;
+  margin: 0;
+}
+
+.signup-link a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
 }
 </style> 

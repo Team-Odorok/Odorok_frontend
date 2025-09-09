@@ -461,42 +461,51 @@ export default {
           content: msg.content
         }))
         
-        // 빈 답변으로 대화 종료 요청
-        const response = await submitAnswer('', chatLog)
+        console.log('대화 종료 - 전체 대화 내역:', chatLog)
+        console.log('대화 종료 - chatLog 길이:', chatLog.length)
         
-        if (response.status === 'DONE') {
-          // 일지 생성 완료
-          generatedDiaries.value = [{
-            title: response.data.content.title || '생성된 일지',
-            content: response.data.content
-          }]
-          // 방문 코스명으로 제목 초기화
-          diaryTitle.value = `${courseNames.value[visitedCourseId] || `코스 ${visitedCourseId}`} 방문 일지`
-          isCompleted.value = true
-          // 완료 알림 표시
-          showCompletionNotification.value = true
-          // 5초 후 자동으로 알림 숨김
-          setTimeout(() => {
-            showCompletionNotification.value = false
-          }, 5000)
+        // 전체 대화 내역으로 일지 생성 요청 (regenerateDiary API 사용)
+        const response = await regenerateDiaryAPI('대화를 종료하고 일지를 생성해주세요.', chatLog)
+        
+        console.log('대화 종료 응답:', response)
+        console.log('응답 데이터:', response.data)
+        
+        if (response.data && response.data.content) {
+          console.log('content 타입:', typeof response.data.content)
+          console.log('content 값:', response.data.content)
+          
+          if (Array.isArray(response.data.content)) {
+            console.log('content는 배열, 길이:', response.data.content.length)
+            const newContent = response.data.content[response.data.content.length - 1]
+            console.log('마지막 일지 내용:', newContent)
+            
+            generatedDiaries.value = [{
+              content: newContent
+            }]
+          } else {
+            console.log('content는 배열이 아님, 직접 사용')
+            generatedDiaries.value = [{
+              content: response.data.content
+            }]
+          }
         } else {
-          // IN_PROGRESS 또는 다른 상태에서도 content가 있으면 사용
-          console.log('대화 종료 응답:', response)
-          console.log('응답 데이터:', response.data)
-          const diaryContent = response.data?.content || '대화 내용을 바탕으로 일지를 생성했습니다.'
-          console.log('일지 내용:', diaryContent)
+          console.log('응답 구조가 예상과 다름, 전체 응답 사용')
+          console.log('response.data:', response.data)
+          console.log('response.content:', response.content)
+          
           generatedDiaries.value = [{
-            title: '생성된 일지',
-            content: diaryContent
+            content: response.data?.content || response.content || '대화 내용을 바탕으로 일지를 생성했습니다.'
           }]
-          diaryTitle.value = `${courseNames.value[visitedCourseId] || `코스 ${visitedCourseId}`} 방문 일지`
-          console.log('일지 제목:', diaryTitle.value)
-          isCompleted.value = true
-          showCompletionNotification.value = true
-          setTimeout(() => {
-            showCompletionNotification.value = false
-          }, 5000)
         }
+        
+        // 방문 코스명으로 제목 초기화
+        diaryTitle.value = `${courseNames.value[visitedCourseId] || `코스 ${visitedCourseId}`} 방문 일지`
+        console.log('일지 제목:', diaryTitle.value)
+        isCompleted.value = true
+        showCompletionNotification.value = true
+        setTimeout(() => {
+          showCompletionNotification.value = false
+        }, 5000)
         
         await scrollToBottom()
       } catch (err) {

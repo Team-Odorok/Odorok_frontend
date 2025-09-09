@@ -56,3 +56,20 @@ export const isLoggedIn = () => {
 export const getAccessToken = () => {
   return localStorage.getItem('accessToken')
 }
+
+// 회원가입
+export const signup = async (email, password, nickname) => {
+  try {
+    const response = await authClient.post('/api/auth/signup', {
+      email: email,
+      password: password,
+      nickname: nickname
+    })
+    
+    console.log('회원가입 성공:', response)
+    return response
+  } catch (error) {
+    console.error('회원가입 실패:', error.response?.status, error.response?.statusText)
+    throw error
+  }
+}
