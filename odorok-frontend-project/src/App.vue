@@ -1,18 +1,31 @@
 <template>
   <RouterView />
+  <button
+    style="position: fixed; right: 20px; bottom: 20px; z-index: 1100;"
+    @click="showAttendance = true"
+  >
+  출석 모달 열기
+
+
+</button>
+
+  <AttendanceModel
+    :visible="showAttendance"
+    @close="showAttendance = false"
+  />
+
 </template>
 
 <script setup>
-import DiaryListView from './views/DiaryListView.vue'
 import { RouterLink, RouterView } from 'vue-router'
+import { ref } from 'vue'
+import AttendanceModel from './components/AttendanceModel.vue'
+const showAttendance = ref(false)
+import DiaryListView from './views/DiaryListView.vue'
 </script>
 
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
 
 .logo {
   display: block;
