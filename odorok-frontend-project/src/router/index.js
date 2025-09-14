@@ -43,7 +43,6 @@ const router = createRouter({
       path: '/diaries/create/chat/:visitedCourseId/:style',
       name: 'diary-create-chat',
       component: DiaryCreateChatView,
-      redirect: '/course-search'
     },
     {
       path: '/course-search',
