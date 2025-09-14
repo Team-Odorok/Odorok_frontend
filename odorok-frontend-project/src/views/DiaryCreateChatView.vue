@@ -168,6 +168,15 @@
 
     <!-- 채팅 인터페이스 -->
     <div v-else class="chat-interface">
+      <!-- 일지 생성 중 전체 스피너 -->
+      <div v-if="isGeneratingDiary" class="diary-generation-overlay">
+        <div class="generation-spinner">
+          <div class="spinner"></div>
+          <p>일지를 생성하고 있습니다...</p>
+          <p class="generation-subtitle">잠시만 기다려주세요</p>
+        </div>
+      </div>
+      
       <!-- 채팅창 -->
       <div class="chat-window" ref="chatWindow">
         <div class="chat-messages">
@@ -1567,6 +1576,7 @@ export default {
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  position: relative;
 }
 
 .chat-window {
@@ -2162,5 +2172,60 @@ export default {
     transform: translateY(-10px);
     opacity: 1;
   }
+}
+
+/* 일지 생성 중 전체 스피너 스타일 */
+.diary-generation-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+  border-radius: 12px;
+}
+
+.generation-spinner {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.generation-spinner .spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+.generation-spinner p {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.generation-subtitle {
+  font-size: 0.9rem !important;
+  color: #666 !important;
+  font-weight: 400 !important;
+  margin-bottom: 0 !important;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style> 
