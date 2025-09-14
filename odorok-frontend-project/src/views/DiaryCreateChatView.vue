@@ -142,7 +142,7 @@
           <div class="diary-actions">
             <button 
               v-if="canRegenerate" 
-              @click="showRegenerateForm = true"
+              @click="openRegenerateForm"
               class="regenerate-btn"
             >
               재생성
@@ -163,20 +163,6 @@
             </button>
           </div>
 
-          <!-- 재생성 폼 -->
-          <div v-if="showRegenerateForm" class="regenerate-form">
-            <h4>재생성 피드백 (선택사항)</h4>
-            <textarea
-              v-model="feedback"
-              placeholder="어떤 부분을 개선하고 싶으신가요? (선택사항)"
-              class="feedback-input"
-              rows="4"
-            ></textarea>
-            <div class="feedback-actions">
-              <button @click="cancelRegenerate" class="cancel-btn">취소</button>
-              <button @click="handleRegenerateDiary" class="confirm-btn">재생성 시작</button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -260,6 +246,16 @@
         </div>
       </div>
     </div>
+    
+    <!-- 재생성 폼 -->
+    <div ref="regenerateFormContainer">
+      <RegenerateForm
+        :is-visible="showRegenerateForm"
+        :is-regenerating="isRegenerating"
+        @close="cancelRegenerate"
+        @confirm="handleRegenerateDiary"
+      />
+    </div>
   </div>
 </template>
 
@@ -268,9 +264,13 @@ import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { startDiaryGeneration, submitAnswer, saveDiary, regenerateDiary as regenerateDiaryAPI, getAvailableCourses } from '@/services/diaryService.js'
 import { marked } from 'marked'
+import RegenerateForm from '@/components/RegenerateForm.vue'
 
 export default {
   name: 'DiaryCreateChatView',
+  components: {
+    RegenerateForm
+  },
   setup() {
     const route = useRoute()
     const router = useRouter()
@@ -284,6 +284,7 @@ export default {
     const chatMessages = ref([])
     const chatWindow = ref(null)
     const messageInput = ref(null)
+    const regenerateFormContainer = ref(null)
     
     // 일지 재생성 관련 상태
     const generatedDiaries = ref([])
@@ -359,6 +360,21 @@ export default {
       setTimeout(() => {
         if (messageInput.value) {
           messageInput.value.focus()
+        }
+      }, 100)
+    }
+
+    // 재생성 폼으로 스크롤
+    const scrollToRegenerateForm = async () => {
+      await nextTick()
+      
+      // 약간의 지연을 추가하여 DOM 업데이트가 완전히 완료되도록 함
+      setTimeout(() => {
+        if (regenerateFormContainer.value) {
+          regenerateFormContainer.value.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          })
         }
       }, 100)
     }
@@ -574,14 +590,19 @@ export default {
       showRegenerateForm.value = false
     }
 
+    // 재생성 폼 열기
+    const openRegenerateForm = async () => {
+      showRegenerateForm.value = true
+      await scrollToRegenerateForm()
+    }
+
     // 재생성 취소
     const cancelRegenerate = () => {
       showRegenerateForm.value = false
-      feedback.value = ''
     }
 
     // 일지 재생성
-    const handleRegenerateDiary = async () => {
+    const handleRegenerateDiary = async (feedbackText = '') => {
       if (isRegenerating.value) return
       
       isRegenerating.value = true
@@ -599,8 +620,8 @@ export default {
         console.log('현재 chatMessages:', chatMessages.value)
         console.log('변환된 chatLog:', chatLog)
         console.log('chatLog 길이:', chatLog.length)
-        console.log('일지 재생성 요청:', { feedback: feedback.value, chatLog })
-        const response = await regenerateDiaryAPI(feedback.value, chatLog)
+        console.log('일지 재생성 요청:', { feedback: feedbackText, chatLog })
+        const response = await regenerateDiaryAPI(feedbackText, chatLog)
         console.log('일지 재생성 응답:', response)
         console.log('응답 데이터 타입:', typeof response.data)
         console.log('응답 데이터:', response.data)
@@ -821,6 +842,7 @@ export default {
       chatMessages,
       chatWindow,
       messageInput,
+      regenerateFormContainer,
       generatedDiaries,
       selectedDiaryIndex,
       selectedDiary,
@@ -837,7 +859,9 @@ export default {
       sendMessage,
       endChatAndGenerate,
       focusInput,
+      scrollToRegenerateForm,
       selectDiary,
+      openRegenerateForm,
       cancelRegenerate,
       handleRegenerateDiary,
       getCompletionTitle,
@@ -1372,69 +1396,6 @@ export default {
   box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
 }
 
-/* 재생성 폼 */
-.regenerate-form {
-  padding: 20px 30px;
-  background: #f8f9fa;
-  border-top: 1px solid #e9ecef;
-}
-
-.regenerate-form h4 {
-  margin-bottom: 15px;
-  color: #333;
-  font-size: 1.1rem;
-}
-
-.feedback-input {
-  width: 100%;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 0.95rem;
-  resize: vertical;
-  font-family: inherit;
-  transition: border-color 0.3s ease;
-}
-
-.feedback-input:focus {
-  outline: none;
-  border-color: #007bff;
-}
-
-.feedback-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 15px;
-}
-
-.cancel-btn, .confirm-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: background 0.3s ease;
-}
-
-.cancel-btn {
-  background: #6c757d;
-  color: white;
-}
-
-.cancel-btn:hover {
-  background: #5a6268;
-}
-
-.confirm-btn {
-  background: #007bff;
-  color: white;
-}
-
-.confirm-btn:hover {
-  background: #0056b3;
-}
 
 /* 사진 첨부 섹션 스타일 (이미지 섹션과 공통) */
 .image-section-header {
