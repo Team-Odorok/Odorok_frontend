@@ -573,7 +573,7 @@ export default {
       // 첫 번째 일지의 상세 정보 가져오기
       try {
         const diaryDetail = await getDiaryDetail(monthGroup.diaries[0].id)
-        currentMonthDiary.value = diaryDetail
+        currentMonthDiary.value = diaryDetail.data || diaryDetail
       } catch (error) {
         console.error('Failed to fetch diary detail:', error)
         currentMonthDiary.value = monthGroup.diaries[0]
@@ -590,7 +590,7 @@ export default {
         
         try {
           const diaryDetail = await getDiaryDetail(diary.id)
-          currentMonthDiary.value = diaryDetail
+          currentMonthDiary.value = diaryDetail.data || diaryDetail
         } catch (error) {
           console.error('Failed to fetch diary detail:', error)
           currentMonthDiary.value = diary
@@ -605,7 +605,7 @@ export default {
         
         try {
           const diaryDetail = await getDiaryDetail(diary.id)
-          currentMonthDiary.value = diaryDetail
+          currentMonthDiary.value = diaryDetail.data || diaryDetail
         } catch (error) {
           console.error('Failed to fetch diary detail:', error)
           currentMonthDiary.value = diary
@@ -617,7 +617,14 @@ export default {
     const viewDiary = async (diary) => {
       try {
         const diaryDetail = await getDiaryDetail(diary.id)
-        selectedDiary.value = diaryDetail
+        console.log('=== 일지 상세 조회 응답 디버깅 ===')
+        console.log('diaryDetail:', diaryDetail)
+        console.log('diaryDetail.data:', diaryDetail.data)
+        console.log('diaryDetail.title:', diaryDetail.title)
+        console.log('diaryDetail.content:', diaryDetail.content)
+        
+        // API 응답 구조에 따라 데이터 설정
+        selectedDiary.value = diaryDetail.data || diaryDetail
       } catch (error) {
         console.error('Failed to fetch diary detail:', error)
         selectedDiary.value = diary
@@ -631,7 +638,7 @@ export default {
     const viewDiaryInModal = async (diary) => {
       try {
         const diaryDetail = await getDiaryDetail(diary.id)
-        selectedDiary.value = diaryDetail
+        selectedDiary.value = diaryDetail.data || diaryDetail
       } catch (error) {
         console.error('Failed to fetch diary detail:', error)
         selectedDiary.value = diary
@@ -1129,7 +1136,7 @@ export default {
 }
 
 .month-header {
-  text-align: center;
+  text-align: left;
   margin-bottom: 30px;
   padding-bottom: 20px;
   border-bottom: 2px solid #e9ecef;
@@ -1166,6 +1173,7 @@ export default {
   font-size: 2rem;
   margin-bottom: 15px;
   font-weight: 600;
+  text-align: left;
 }
 
 .current-diary-detail .diary-meta {
@@ -1387,18 +1395,29 @@ export default {
 
 .modal-close {
   position: absolute;
-  top: 15px;
+  top: 20px;
   right: 20px;
-  background: none;
+  background: rgba(255, 255, 255, 0.9);
   border: none;
-  font-size: 2rem;
+  font-size: 1.8rem;
   cursor: pointer;
   color: #666;
   z-index: 1001;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .modal-close:hover {
   color: #333;
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* 일지 상세 모달 */
@@ -1418,6 +1437,7 @@ export default {
   font-size: 2rem;
   margin-bottom: 15px;
   font-weight: 600;
+  text-align: left;
 }
 
 .diary-detail .diary-meta {

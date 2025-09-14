@@ -120,7 +120,14 @@ export default {
 
       try {
         const response = await getDiaryDetail(diaryId)
-        diary.value = response
+        console.log('=== DiaryDetailView 일지 상세 조회 응답 디버깅 ===')
+        console.log('response:', response)
+        console.log('response.data:', response.data)
+        console.log('response.title:', response.title)
+        console.log('response.content:', response.content)
+        
+        // API 응답 구조에 따라 데이터 설정
+        diary.value = response.data || response
       } catch (err) {
         error.value = err.message || '일지를 불러오는데 실패했습니다.'
         console.error('Error fetching diary detail:', err)
