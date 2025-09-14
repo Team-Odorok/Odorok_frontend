@@ -205,6 +205,25 @@
               </div>
             </div>
           </div>
+          
+          <!-- AI가 답변을 준비하는 중일 때 표시 (일지 생성 중이 아닐 때만) -->
+          <div v-if="isProcessing && !isGeneratingDiary" class="message assistant ai-typing">
+            <div class="message-content">
+              <div class="ai-avatar">
+                🤖
+              </div>
+              <div class="message-text">
+                <div class="typing-indicator">
+                  <span>AI가 답변을 준비하고 있습니다</span>
+                  <div class="typing-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -212,6 +231,7 @@
       <div class="chat-input">
         <div class="input-container">
           <textarea
+            ref="messageInput"
             v-model="userInput"
             @keydown.enter.prevent="sendMessage"
             placeholder="답변을 입력해주세요..."
@@ -230,10 +250,11 @@
             </button>
             <button 
               @click="endChatAndGenerate" 
-              :disabled="isProcessing"
+              :disabled="isProcessing || isGeneratingDiary"
               class="end-chat-btn"
             >
-              대화 종료 & 1차 생성
+              <span v-if="!isGeneratingDiary">대화 종료 & 1차 생성</span>
+              <span v-else>일지 생성 중...</span>
             </button>
           </div>
         </div>
@@ -258,9 +279,11 @@ export default {
     const error = ref(null)
     const isCompleted = ref(false)
     const isProcessing = ref(false)
+    const isGeneratingDiary = ref(false) // 일지 생성 중 상태
     const userInput = ref('')
     const chatMessages = ref([])
     const chatWindow = ref(null)
+    const messageInput = ref(null)
     
     // 일지 재생성 관련 상태
     const generatedDiaries = ref([])
@@ -328,6 +351,18 @@ export default {
       }
     }
 
+    // 입력창에 포커스
+    const focusInput = async () => {
+      await nextTick()
+      
+      // 약간의 지연을 추가하여 DOM 업데이트가 완전히 완료되도록 함
+      setTimeout(() => {
+        if (messageInput.value) {
+          messageInput.value.focus()
+        }
+      }, 100)
+    }
+
     // 뒤로가기
     const goBack = () => {
       router.back()
@@ -378,6 +413,8 @@ export default {
         }
         
         await scrollToBottom()
+        // 채팅 시작 후 입력창에 포커스
+        await focusInput()
       } catch (err) {
         error.value = err.message || '일지 생성을 시작할 수 없습니다.'
         console.error('Error starting chat:', err)
@@ -403,6 +440,9 @@ export default {
       
       // AI 응답 처리
       isProcessing.value = true
+      
+      // AI가 답변을 준비하는 중일 때도 스크롤을 아래로 이동
+      await scrollToBottom()
       
       try {
         // 실제 API 호출
@@ -441,18 +481,20 @@ export default {
         console.error('Error sending message:', err)
       } finally {
         isProcessing.value = false
+        // AI 응답 완료 후 입력창에 포커스 (finally 블록에서 실행)
+        await focusInput()
       }
     }
 
     // 대화 종료 및 1차 생성
     const endChatAndGenerate = async () => {
-      if (isProcessing.value) return
+      if (isProcessing.value || isGeneratingDiary.value) return
       
       // 확인 대화상자
       const confirmed = confirm('대화를 종료하고 1차 일지를 생성하시겠습니까?')
       if (!confirmed) return
       
-      isProcessing.value = true
+      isGeneratingDiary.value = true
       
       try {
         // 현재까지의 대화 내용으로 일지 생성 요청
@@ -522,7 +564,7 @@ export default {
           showCompletionNotification.value = false
         }, 5000)
       } finally {
-        isProcessing.value = false
+        isGeneratingDiary.value = false
       }
     }
 
@@ -543,6 +585,9 @@ export default {
       if (isRegenerating.value) return
       
       isRegenerating.value = true
+      
+      // AI가 답변을 준비하는 중일 때도 스크롤을 아래로 이동
+      await scrollToBottom()
       
       try {
         // 실제 API 호출
@@ -771,9 +816,11 @@ export default {
       error,
       isCompleted,
       isProcessing,
+      isGeneratingDiary,
       userInput,
       chatMessages,
       chatWindow,
+      messageInput,
       generatedDiaries,
       selectedDiaryIndex,
       selectedDiary,
@@ -789,6 +836,7 @@ export default {
       startChat,
       sendMessage,
       endChatAndGenerate,
+      focusInput,
       selectDiary,
       cancelRegenerate,
       handleRegenerateDiary,
@@ -2104,5 +2152,54 @@ export default {
 
 .diary-text :deep(a:hover) {
   text-decoration: underline;
+}
+
+/* AI 타이핑 인디케이터 스타일 */
+.ai-typing {
+  opacity: 0.8;
+}
+
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-style: italic;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.typing-dots .dot {
+  width: 6px;
+  height: 6px;
+  background-color: #999;
+  border-radius: 50%;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dots .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
 }
 </style> 
