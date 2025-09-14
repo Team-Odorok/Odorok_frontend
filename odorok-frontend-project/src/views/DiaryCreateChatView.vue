@@ -722,12 +722,17 @@ export default {
     // 일지 저장
     const handleSaveDiary = async () => {
       if (!selectedDiary.value) return
+      if (!visitedCourseId) {
+        error.value = '방문 코스 ID가 없습니다. 다시 시작해주세요.'
+        console.error('visitedCourseId가 없습니다:', visitedCourseId)
+        return
+      }
       
       try {
         // 실제 API 호출
         const imageFiles = attachedImages.value.map(img => img.file)
-        
-        const response = await saveDiary(diaryTitle.value, selectedDiary.value.content, imageFiles)
+        console.log('일지 저장 시도 - visitedCourseId:', visitedCourseId)
+        const response = await saveDiary(diaryTitle.value, selectedDiary.value.content, imageFiles, visitedCourseId)
         
         if (response.status === 'CREATED') {
           // 저장 성공 후 일지 목록으로 이동
@@ -736,8 +741,11 @@ export default {
             ? `일지와 ${imageCount}장의 사진이 성공적으로 저장되었습니다!`
             : '일지가 성공적으로 저장되었습니다!'
           
+          console.log('일지 저장 성공! diaryId:', response.data?.diaryId)
           alert(message)
           router.push('/')
+        } else {
+          console.log('예상치 못한 응답 상태:', response.status)
         }
       } catch (err) {
         error.value = err.message || '일지 저장에 실패했습니다.'

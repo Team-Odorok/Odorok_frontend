@@ -34,6 +34,12 @@
       >
         {{ creatingDiary ? '권한 확인 중...' : '✏️ 새 일지 작성' }}
       </button>
+      <button 
+        @click="showPurchaseModal = true"
+        class="purchase-btn"
+      >
+        💳 일지 생성권 구매
+      </button>
     </div>
 
     <!-- 로딩 상태 -->
@@ -276,6 +282,39 @@
       </div>
     </div>
 
+    <!-- 일지 생성권 구매 모달 -->
+    <div v-if="showPurchaseModal" class="purchase-modal" @click="closePurchaseModal">
+      <div class="modal-content" @click.stop>
+        <button class="modal-close" @click="closePurchaseModal">×</button>
+        
+        <div class="purchase-content">
+          <h2>일지 생성권 구매</h2>
+          <p class="purchase-description">일지를 작성하기 위한 생성권을 구매하세요.</p>
+          
+          <div class="quantity-selector">
+            <label for="quantity">구매 수량:</label>
+            <select id="quantity" v-model="purchaseQuantity" class="quantity-dropdown">
+              <option value="1">1개</option>
+              <option value="3">3개</option>
+              <option value="5">5개</option>
+              <option value="10">10개</option>
+            </select>
+          </div>
+          
+          <div class="purchase-summary">
+            <p>구매할 생성권: <strong>{{ purchaseQuantity }}개</strong></p>
+          </div>
+          
+          <div class="purchase-actions">
+            <button @click="closePurchaseModal" class="cancel-purchase-btn">취소</button>
+            <button @click="confirmPurchase" :disabled="purchasing" class="confirm-purchase-btn">
+              {{ purchasing ? '구매 중...' : '구매하기' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 토스트 알림 -->
     <Toast 
       :show="showToast"
@@ -291,7 +330,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DiaryCard from '@/components/DiaryCard.vue'
 import Toast from '@/components/Toast.vue'
-import { getDiaryList, getDiaryDetail, getDiaryPermissions } from '@/services/diaryService'
+import { getDiaryList, getDiaryDetail, getDiaryPermissions, deleteDiary as deleteDiaryAPI, purchaseDiaryCreateItems } from '@/services/diaryService'
 
 export default {
   name: 'DiaryListView',
@@ -325,6 +364,11 @@ export default {
     // 월별 합본 모달 관련 상태
     const currentMonthDiaryIndex = ref(0)
     const currentMonthDiary = ref(null)
+    
+    // 구매 모달 관련 상태
+    const showPurchaseModal = ref(false)
+    const purchaseQuantity = ref(1)
+    const purchasing = ref(false)
 
     // 사용 가능한 연도 목록
     const availableYears = computed(() => {
@@ -632,11 +676,76 @@ export default {
 
 
 
-    const deleteDiary = () => {
-      if (confirm('정말로 이 일지를 삭제하시겠습니까?')) {
-        console.log('Delete diary:', selectedDiary.value?.id)
-        // TODO: 일지 삭제 API 호출
-        closeDiaryModal()
+    const deleteDiary = async () => {
+      console.log('=== 일지 삭제 디버깅 (ListView) ===')
+      console.log('selectedDiary.value:', selectedDiary.value)
+      console.log('selectedDiary.value?.data:', selectedDiary.value?.data)
+      console.log('selectedDiary.value?.data?.id:', selectedDiary.value?.data?.id)
+      console.log('selectedDiary.value?.data?.diaryId:', selectedDiary.value?.data?.diaryId)
+      
+      // API 응답 구조에 맞게 data 필드에서 diaryId 찾기
+      const diaryData = selectedDiary.value?.data || selectedDiary.value
+      const diaryId = diaryData?.id || diaryData?.diaryId
+      
+      if (!diaryId) {
+        console.error('일지 ID를 찾을 수 없습니다.')
+        alert('삭제할 일지 정보가 없습니다.')
+        return
+      }
+
+      const title = diaryData?.title || '제목 없음'
+      const confirmMessage = `정말로 "${title}" 일지를 삭제하시겠습니까?\n\n삭제된 일지는 복구할 수 없습니다.`
+      
+      if (confirm(confirmMessage)) {
+        try {
+          console.log('일지 삭제 시도 - diaryId:', diaryId)
+          await deleteDiaryAPI(diaryId)
+          
+          // 삭제 성공 시 모달 닫고 목록 새로고침
+          closeDiaryModal()
+          showToastMessage('일지가 성공적으로 삭제되었습니다.', 'success')
+          
+          // 일지 목록 새로고침
+          await fetchDiaries()
+        } catch (err) {
+          console.error('일지 삭제 실패:', err)
+          showToastMessage(err.message || '일지 삭제에 실패했습니다.', 'error')
+        }
+      }
+    }
+
+    // 구매 모달 닫기
+    const closePurchaseModal = () => {
+      showPurchaseModal.value = false
+      purchaseQuantity.value = 1
+    }
+
+    // 일지 생성권 구매 확인
+    const confirmPurchase = async () => {
+      if (!purchaseQuantity.value || purchaseQuantity.value < 1) {
+        showToastMessage('구매 수량을 선택해주세요.', 'error')
+        return
+      }
+
+      const confirmMessage = `일지 생성권 ${purchaseQuantity.value}개를 구매하시겠습니까?`
+      
+      if (confirm(confirmMessage)) {
+        purchasing.value = true
+        
+        try {
+          console.log('일지 생성권 구매 시도 - quantity:', purchaseQuantity.value)
+          await purchaseDiaryCreateItems(purchaseQuantity.value)
+          
+          // 구매 성공
+          closePurchaseModal()
+          showToastMessage(`일지 생성권 ${purchaseQuantity.value}개가 성공적으로 구매되었습니다!`, 'success')
+          
+        } catch (err) {
+          console.error('일지 생성권 구매 실패:', err)
+          showToastMessage(err.message || '일지 생성권 구매에 실패했습니다.', 'error')
+        } finally {
+          purchasing.value = false
+        }
       }
     }
 
@@ -723,7 +832,13 @@ export default {
       fetchDiaries,
       formatDate,
       showToastMessage,
-      closeToast
+      closeToast,
+      // 구매 관련
+      showPurchaseModal,
+      purchaseQuantity,
+      purchasing,
+      closePurchaseModal,
+      confirmPurchase
     }
   }
 }
@@ -791,6 +906,7 @@ export default {
 .create-diary-section {
   display: flex;
   justify-content: center;
+  gap: 20px;
   margin-bottom: 30px;
 }
 
@@ -1563,5 +1679,173 @@ export default {
     flex-direction: column;
     gap: 10px;
   }
+}
+
+/* 구매 버튼 스타일 */
+.purchase-btn {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.purchase-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.purchase-btn:active {
+  transform: translateY(0);
+}
+
+/* 구매 모달 스타일 */
+.purchase-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.purchase-modal .modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.purchase-modal .modal-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.3s ease;
+}
+
+.purchase-modal .modal-close:hover {
+  color: #333;
+}
+
+.purchase-content h2 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.8rem;
+  text-align: center;
+}
+
+.purchase-description {
+  text-align: center;
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 1rem;
+}
+
+.quantity-selector {
+  margin-bottom: 25px;
+}
+
+.quantity-selector label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #333;
+}
+
+.quantity-dropdown {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.quantity-dropdown:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.purchase-summary {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.purchase-summary p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.purchase-summary strong {
+  color: #007bff;
+  font-size: 1.2rem;
+}
+
+.purchase-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.cancel-purchase-btn,
+.confirm-purchase-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.cancel-purchase-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.cancel-purchase-btn:hover {
+  background: #5a6268;
+}
+
+.confirm-purchase-btn {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+}
+
+.confirm-purchase-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.confirm-purchase-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 </style> 

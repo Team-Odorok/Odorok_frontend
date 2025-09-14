@@ -92,7 +92,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getDiaryDetail } from '@/services/diaryService'
+import { getDiaryDetail, deleteDiary as deleteDiaryAPI } from '@/services/diaryService'
 
 export default {
   name: 'DiaryDetailView',
@@ -148,13 +148,38 @@ export default {
 
 
     // 일지 삭제
-    const deleteDiary = () => {
-      if (confirm('정말로 이 일지를 삭제하시겠습니까?')) {
-        console.log('Delete diary:', diary.value.id)
-        // TODO: 일지 삭제 API 호출
-        // deleteDiary(diary.value.id).then(() => {
-        //   router.push('/diaries')
-        // })
+    const deleteDiary = async () => {
+      console.log('=== 일지 삭제 디버깅 (DetailView) ===')
+      console.log('diary.value:', diary.value)
+      console.log('diary.value?.data:', diary.value?.data)
+      console.log('diary.value?.data?.id:', diary.value?.data?.id)
+      console.log('diary.value?.data?.diaryId:', diary.value?.data?.diaryId)
+      console.log('route.params.diaryId:', route.params.diaryId)
+      
+      // API 응답 구조에 맞게 data 필드에서 diaryId 찾기
+      const diaryData = diary.value?.data || diary.value
+      const diaryId = diaryData?.id || diaryData?.diaryId || route.params.diaryId
+      
+      if (!diaryId) {
+        console.error('일지 ID를 찾을 수 없습니다.')
+        alert('삭제할 일지 정보가 없습니다.')
+        return
+      }
+
+      const title = diaryData?.title || '제목 없음'
+      const confirmMessage = `정말로 "${title}" 일지를 삭제하시겠습니까?\n\n삭제된 일지는 복구할 수 없습니다.`
+      
+      if (confirm(confirmMessage)) {
+        try {
+          console.log('일지 삭제 시도 - diaryId:', diaryId)
+          await deleteDiaryAPI(diaryId)
+          
+          alert('일지가 성공적으로 삭제되었습니다.')
+          router.push('/diaries')
+        } catch (err) {
+          console.error('일지 삭제 실패:', err)
+          alert(err.message || '일지 삭제에 실패했습니다.')
+        }
       }
     }
 

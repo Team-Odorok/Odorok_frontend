@@ -25,6 +25,11 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    // FormData인 경우 Content-Type 헤더를 제거하여 axios가 자동으로 multipart/form-data로 설정하도록 함
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
+      console.log('FormData 감지됨, Content-Type 헤더 제거')
+    }
     return config
   },
   (error) => Promise.reject(error)
@@ -116,10 +121,24 @@ export const updateDiary = async (diaryId, diaryData) => {
   }
 }
 
-// 일지 삭제 (향후 구현)
+// 일지 삭제
 export const deleteDiary = async (diaryId) => {
   try {
+    console.log(`일지 삭제 시도 중: diaryId=${diaryId}`)
     const response = await apiClient.delete(`/diaries/${diaryId}`)
+    console.log('일지 삭제 성공:', response)
+    
+    // API 응답 구조에 따른 에러 처리
+    if (response.status === 'UNAUTHORIZED') {
+      throw new Error('AccessToken이 유효하지 않습니다.')
+    } else if (response.status === 'FORBIDDEN') {
+      throw new Error('해당 일지를 삭제할 권한이 없습니다.')
+    } else if (response.status === 'NOT_FOUND') {
+      throw new Error('해당 일지를 찾을 수 없습니다.')
+    } else if (response.status === 'INTERNAL_SERVER_ERROR') {
+      throw new Error('일지 삭제 중 예외 발생')
+    }
+    
     return response
   } catch (error) {
     console.error('Failed to delete diary:', error)
@@ -212,22 +231,59 @@ export const submitAnswer = async (answer, chatLog) => {
 }
 
 // 일지 최종 저장
-export const saveDiary = async (title, content, images = []) => {
+export const saveDiary = async (title, content, images = [], visitedCourseId = null) => {
   try {
-    // 스웨거 스펙에 맞게 diary 객체와 images 배열로 구성
-    const requestData = {
-      diary: {
-        title: title,
-        content: content
-      },
-      images: images
+    console.log('=== 일지 저장 요청 시작 ===')
+    console.log('제목:', title)
+    console.log('제목 타입:', typeof title)
+    console.log('제목 길이:', title?.length || 0)
+    console.log('내용:', content)
+    console.log('내용 타입:', typeof content)
+    console.log('내용 길이:', content?.length || 0)
+    console.log('이미지 개수:', images?.length || 0)
+    console.log('visitedCourseId:', visitedCourseId)
+    
+    if (!visitedCourseId) {
+      console.log('visitedCourseId가 없지만 API 호출을 시도합니다.')
     }
     
-    console.log('일지 저장 요청 데이터:', requestData)
-    console.log('diary 객체:', requestData.diary)
-    console.log('images 배열 길이:', requestData.images.length)
+    // API 스펙에 맞게 FormData로 구성
+    const formData = new FormData()
     
-    const response = await apiClient.post('/diaries', requestData)
+    // diary 객체를 JSON 문자열로 변환하여 FormData에 추가
+    const diaryData = {
+      vcourseId: parseInt(visitedCourseId) || 0, // API 스펙에 맞게 vcourseId 필드 추가
+      title: title,
+      content: content
+    }
+    
+    formData.append('diary', JSON.stringify(diaryData))
+    
+    // images 배열을 FormData에 추가 (File 객체인 경우에만)
+    if (images && images.length > 0) {
+      images.forEach(image => {
+        if (image instanceof File) {
+          formData.append('images', image)
+        }
+      })
+    }
+    
+    console.log('FormData 구성 완료')
+    console.log('diary 데이터:', diaryData)
+    console.log('이미지 개수:', images?.length || 0)
+    console.log('visitedCourseId:', visitedCourseId)
+    
+    // multipart/form-data로 요청
+    console.log('multipart/form-data 형식으로 시도...')
+    console.log('FormData 객체:', formData)
+    console.log('FormData 크기:', formData.get('diary')?.length || 0)
+    
+    const response = await apiClient.post('/diaries', formData, {
+      headers: {
+        'Content-Type': undefined // multipart/form-data 자동 설정을 위해 undefined로 설정
+      }
+    })
+    
     console.log('일지 저장 응답:', response)
     
     // API 응답 구조에 따른 에러 처리
@@ -243,7 +299,14 @@ export const saveDiary = async (title, content, images = []) => {
     
     return response
   } catch (error) {
-    console.error('Failed to save diary:', error)
+    console.error('=== 일지 저장 실패 ===')
+    console.error('에러 객체:', error)
+    console.error('에러 메시지:', error.message)
+    console.error('에러 응답:', error.response)
+    console.error('에러 상태:', error.response?.status)
+    console.error('에러 데이터:', error.response?.data)
+    console.error('에러 헤더:', error.response?.headers)
+    console.error('요청 설정:', error.config)
     throw error
   }
 }
@@ -352,6 +415,32 @@ export const testApiConnection = async () => {
     return '테스트 완료'
   } catch (error) {
     console.error('API 연결 테스트 실패:', error)
+    throw error
+  }
+}
+
+// 일지 생성권 구매
+export const purchaseDiaryCreateItems = async (quantity) => {
+  try {
+    console.log(`일지 생성권 구매 시도 중: quantity=${quantity}`)
+    
+    const response = await apiClient.post(`/diaries/diary-create-items?quantity=${quantity}`)
+    console.log('일지 생성권 구매 성공:', response)
+    
+    // API 응답 구조에 따른 에러 처리
+    if (response.status === 'UNAUTHORIZED') {
+      throw new Error('AccessToken이 유효하지 않습니다.')
+    } else if (response.status === 'BAD_REQUEST') {
+      throw new Error('잘못된 요청입니다. 수량을 확인해주세요.')
+    } else if (response.status === 'FORBIDDEN') {
+      throw new Error('일지 생성권 구매 권한이 없습니다.')
+    } else if (response.status === 'INTERNAL_SERVER_ERROR') {
+      throw new Error('일지 생성권 구매 중 예외 발생')
+    }
+    
+    return response
+  } catch (error) {
+    console.error('Failed to purchase diary create items:', error)
     throw error
   }
 } 
