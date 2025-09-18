@@ -9,22 +9,13 @@
       <!-- 제목 입력 컴포넌트  -->
       <TitleInput @title-changed="handleTitleChange"/>
       
-      <!-- 게시판 설정 -->
+      <!-- 질병 선택 -->
       <div class="form-section">
-        <h3>게시판 설정</h3>
+        <h3>질병 선택</h3>
         <div class="form-row">
           <div class="form-group">
-            <label for="boardType">게시판 타입</label>
-            <select id="boardType" v-model="formData.boardType" class="form-select">
-              <option v-for="option in boardTypeOptions" :key="option.value" :value="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </div>
-          
-          <div class="form-group" v-if="formData.boardType === 3">
-            <label for="diseaseId">질병 선택</label>
-            <select id="diseaseId" v-model="formData.diseaseId" class="form-select">
+            <label for="diseaseId">관련 질병을 선택하세요</label>
+            <select id="diseaseId" v-model="formData.diseaseId" class="form-select" required>
               <option v-for="option in diseaseOptions" :key="option.value" :value="option.value">
                 {{ option.label }}
               </option>
@@ -72,18 +63,11 @@ export default {
       title: '',
       content: '',
       notice: false,
-      // 게시판 타입: 1=일반, 2=공지사항, 3=질병별 추천
-      boardType: 1,
+      // 고정값: 질병별 추천 게시판
+      boardType: 3,
       diseaseId: null,
       courseId: null,
     })
-    
-    // 게시판 타입 옵션
-    const boardTypeOptions = ref([
-      { value: 1, label: '일반 게시판' },
-      { value: 2, label: '공지사항' },
-      { value: 3, label: '질병별 추천' }
-    ])
     
     // 질병 옵션
     const diseaseOptions = ref([
@@ -124,33 +108,25 @@ export default {
           return
         }
 
-        const formDataToSend = new FormData()
-
-        // 이미지가 있을 때만 추가
-        if (selectedImages.value && selectedImages.value.length > 0) {
-          selectedImages.value.forEach((image) => {
-            formDataToSend.append('images', image.file)
-          })
+        if (!formData.value.diseaseId) {
+          handleApiError({ message: '질병을 선택해주세요' }, '게시글 작성')
+          return
         }
 
-        const jsonData = {
+        // 스웨거 명세에 맞는 데이터 형식으로 변환
+        const articleData = {
           title: formData.value.title,
           content: formData.value.content,
-          notice: !!formData.value.notice,
+          boardType: 3, // 고정값: 질병별 추천
+          notice: false,
+          diseaseId: Number(formData.value.diseaseId),
+          courseId: null,
+          images: selectedImages.value.map(img => img.file)
         }
-        // 숫자 필드가 유효하면 포함(스펙: boardType, diseaseId, courseId)
-        const bt = Number(formData.value.boardType)
-        if (!Number.isNaN(bt)) jsonData.boardType = bt
-        const did = Number(formData.value.diseaseId)
-        if (!Number.isNaN(did) && formData.value.diseaseId !== null && formData.value.diseaseId !== '') jsonData.diseaseId = did
-        const cid = Number(formData.value.courseId)
-        if (!Number.isNaN(cid) && formData.value.courseId !== null && formData.value.courseId !== '') jsonData.courseId = cid
 
-        formDataToSend.append('data', new Blob([JSON.stringify(jsonData)], {
-          type: 'application/json'
-        }))
+        console.log('📤 전송할 데이터:', articleData)
 
-        const response = await communityApi.createArticle(formDataToSend)
+        const response = await communityApi.createArticle(articleData)
 
         if (response.status === 'success') {
           showSuccess('게시글이 성공적으로 등록되었습니다.')
@@ -174,7 +150,6 @@ export default {
       formData,
       selectedImages,
       isSubmitting,
-      boardTypeOptions,
       diseaseOptions,
       handleTitleChange,
       handleImageChange,

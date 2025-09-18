@@ -196,9 +196,9 @@ const courseApi = {
     }
   },
 
-  // 주변 명소 조회
-  getNearbyAttractions: async (sidoCode, sigunguCode, contentTypeId = 21) => {
-    const cacheKey = `attractions_${sidoCode}_${sigunguCode}_${contentTypeId}`;
+  // 주변 명소 조회 (새로운 API 사용)
+  getNearbyAttractions: async (courseId, contentTypeId = 12) => {
+    const cacheKey = `attractions_around_${courseId}_${contentTypeId}`;
     
     // 캐시된 응답이 있으면 반환
     if (requestCache.has(cacheKey)) {
@@ -215,8 +215,8 @@ const courseApi = {
     // 새로운 요청 생성
     const requestPromise = (async () => {
       try {
-        const response = await apiClient.get('/attractions/region', {
-          params: { sidoCode, sigunguCode, contentTypeId }
+        const response = await apiClient.get('/attractions/around', {
+          params: { courseId, contentTypeId }
         });
         
         // 성공 시 캐시에 저장 (5분간 유효)
@@ -332,6 +332,8 @@ const courseApi = {
           dueDate: dueDate,
           attractionIds: attractionIds || []
         }
+        
+        console.log('🔍 스케줄 등록 요청:', requestData);
         
         const response = await apiClient.post('/courses/schedule', requestData);
         return response.data;

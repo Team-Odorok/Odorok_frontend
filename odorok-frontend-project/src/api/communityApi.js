@@ -93,9 +93,11 @@ export const communityApi = {
   // 게시글 목록 조회 (API 명세에 맞춤)
   getArticles: async (params) => {
     try {
+      console.log('📝 게시글 목록 조회 요청:', params)
       const response = await apiClient.get('/articles/search', {
         params: params
       })
+      console.log('📝 게시글 목록 조회 응답:', response.data)
       return response.data
     } catch (error) {
       console.error('게시글 목록 조회 실패:', error)

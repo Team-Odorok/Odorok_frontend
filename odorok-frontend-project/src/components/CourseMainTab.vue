@@ -242,15 +242,12 @@ export default {
       if (!this.selectedCourse) return
       this.loadingAttractions = true
       try {
-        const params = {
-          sidoCode: this.selectedCourse.sidoCode || 1,
-          sigunguCode: this.selectedCourse.sigunguCode || 1,
-          contentTypeId: this.selectedCourse.contentTypeId || 21
-        }
+        const courseId = this.selectedCourse.id || this.selectedCourse.courseId
+        const contentTypeId = this.selectedCourse.contentTypeId || 12
+        
         const response = await courseApi.getNearbyAttractions(
-          params.sidoCode,
-          params.sigunguCode,
-          params.contentTypeId
+          courseId,
+          contentTypeId
         )
         if (response && response.status === 'success' && response.data && response.data.items) {
           this.attractions = response.data.items

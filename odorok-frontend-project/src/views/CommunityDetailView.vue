@@ -128,7 +128,28 @@ export default {
           const payload = response.data ?? response.article ?? response
 
           article.value = payload
-          isLiked.value = payload?.isLiked ?? payload?.liked ?? false
+          
+          // 좋아요 상태를 더 확실하게 확인
+          const serverLiked = payload?.isLiked ?? 
+                             payload?.liked ?? 
+                             payload?.isLikedByUser ?? 
+                             payload?.userLiked ?? 
+                             false
+          
+          // localStorage에서 저장된 좋아요 상태도 확인
+          const articleId = route.params.id
+          const savedLiked = localStorage.getItem(`article_${articleId}_liked`)
+          const localLiked = savedLiked ? savedLiked === 'true' : null
+          
+          // 서버 상태를 우선하되, 서버에서 정보가 없으면 localStorage 사용
+          isLiked.value = serverLiked || (localLiked !== null ? localLiked : false)
+          
+          console.log('🔍 좋아요 상태 확인:', {
+            서버상태: serverLiked,
+            로컬저장: localLiked,
+            최종결과: isLiked.value,
+            articleId: articleId
+          })
 
           if (article.value) {
             const normalized = Number(article.value.likeCount ?? article.value.likes ?? 0)
@@ -170,17 +191,95 @@ export default {
       liking.value = true
       try {
         const articleId = getArticleId()
-        const response = await communityApi.toggleLike(articleId)
+        console.log('🔍 좋아요 상태 디버깅:', {
+          articleId: articleId,
+          isLiked: isLiked.value,
+          isLikedType: typeof isLiked.value,
+          article: article.value,
+          articleLiked: article.value?.isLiked,
+          articleLikedType: typeof article.value?.isLiked
+        })
+        
+        let response
+        if (isLiked.value === true) {
+          // 현재 좋아요 상태이면 취소
+          console.log('👎 좋아요 취소 API 호출')
+          
+          // 임시로 직접 fetch 호출
+          const token = localStorage.getItem('accessToken')
+          const fetchResponse = await fetch(`https://odorok.duckdns.org/api/articles/${articleId}/unlikes`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({})
+          })
+          
+          if (fetchResponse.ok) {
+            response = await fetchResponse.json()
+            console.log('👎 좋아요 취소 응답:', response)
+          } else {
+            throw new Error(`좋아요 취소 실패: ${fetchResponse.status}`)
+          }
+        } else {
+          // 현재 좋아요 안한 상태이면 추가
+          console.log('👍 좋아요 추가 API 호출')
+          
+          // 임시로 직접 fetch 호출
+          const token = localStorage.getItem('accessToken')
+          const fetchResponse = await fetch(`https://odorok.duckdns.org/api/articles/${articleId}/likes`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({})
+          })
+          
+          if (fetchResponse.ok) {
+            response = await fetchResponse.json()
+            console.log('👍 좋아요 추가 응답:', response)
+          } else {
+            throw new Error(`좋아요 추가 실패: ${fetchResponse.status}`)
+          }
+        }
         
         if (response && response.status === 'success') {
+          // 좋아요 상태 토글
+          const previousLiked = isLiked.value
           isLiked.value = !isLiked.value
-          const newCount = response.data?.likeCount ?? response.data?.likes ?? article.value.likeCount
+          
+          // 좋아요 수 계산 (이전 상태와 현재 상태를 비교)
           if (article.value) {
-            article.value.likeCount = Number(newCount)
+            const currentCount = Number(article.value.likeCount) || 0
+            if (previousLiked && !isLiked.value) {
+              // 좋아요 취소: -1
+              article.value.likeCount = Math.max(0, currentCount - 1)
+            } else if (!previousLiked && isLiked.value) {
+              // 좋아요 추가: +1
+              article.value.likeCount = currentCount + 1
+            }
+            console.log('👍 좋아요 수 업데이트:', {
+              이전상태: previousLiked,
+              현재상태: isLiked.value,
+              이전개수: currentCount,
+              현재개수: article.value.likeCount
+            })
           }
+          
+          // 좋아요 상태를 localStorage에 저장하여 페이지 새로고침 시에도 유지
+          const likeKey = `article_${articleId}_liked`
+          localStorage.setItem(likeKey, isLiked.value.toString())
+          console.log('💾 좋아요 상태 저장:', likeKey, isLiked.value)
         }
       } catch (err) {
         console.error('좋아요 처리 실패:', err)
+        alert('좋아요 처리에 실패했습니다.')
       } finally {
         liking.value = false
       }
@@ -198,7 +297,8 @@ export default {
         
         if (response && response.status === 'success') {
           newComment.value = ''
-          await fetchComments() // 댓글 목록 새로고침
+          // 댓글 목록만 새로고침 (댓글 수는 댓글 목록 길이로 계산)
+          await fetchComments()
         }
       } catch (err) {
         console.error('댓글 작성 실패:', err)

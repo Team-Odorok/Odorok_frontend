@@ -77,10 +77,9 @@ export default {
     const diseaseMapping = {
       1: '고혈압',
       2: '당뇨',
-      3: '비만',
-      4: '허리디스크',
-      5: '관절염',
-      6: '고지혈증'
+      3: '허리디스크',
+      4: '관절염',
+      5: '고지혈증'
     }
 
     const getDiseaseName = (diseaseId) => {

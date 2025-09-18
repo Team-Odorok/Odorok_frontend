@@ -143,10 +143,10 @@
     methods: {
       async loadAttractions() {
         try {
+          const courseId = this.course.id || this.course.courseId
           const response = await courseApi.getNearbyAttractions(
-            this.course.sidoCode || 1,
-            this.course.sigunguCode || 1,
-            21
+            courseId,
+            12
           )
           if (response && response.status === 'success' && response.data && response.data.items) {
             this.availableAttractions = response.data.items.slice(0, 10)

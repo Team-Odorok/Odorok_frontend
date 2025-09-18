@@ -50,8 +50,8 @@ export const mypageService = {
           console.log(`프로필 조회 시도: ${endpoint}`)
           const response = await authClient.get(endpoint)
           console.log(`✅ 프로필 조회 성공: ${endpoint}`, response.data)
-          return response.data
-        } catch (error) {
+      return response.data
+    } catch (error) {
           console.log(`❌ 프로필 조회 실패: ${endpoint}`, error.response?.status, error.response?.statusText)
           if (error.response?.status !== 404 && error.response?.status !== 403) {
             throw error
@@ -81,8 +81,8 @@ export const mypageService = {
           console.log(`건강정보 조회 시도: ${endpoint}`)
           const response = await authClient.get(endpoint)
           console.log(`✅ 건강정보 조회 성공: ${endpoint}`, response.data)
-          return response.data
-        } catch (error) {
+      return response.data
+    } catch (error) {
           console.log(`❌ 건강정보 조회 실패: ${endpoint}`, error.response?.status, error.response?.statusText)
           if (error.response?.status !== 404 && error.response?.status !== 403) {
             throw error
@@ -97,7 +97,7 @@ export const mypageService = {
     }
   },
 
-  // 사용자 건강정보 수정
+  // 사용자 건강정보 수정 (스웨거 명세에 맞춤)
   async updateUserHealth(healthData) {
     try {
       console.log('🏥 사용자 건강정보 수정 시도...')
@@ -105,154 +105,46 @@ export const mypageService = {
       const token = localStorage.getItem('accessToken')
       console.log('🔑 현재 토큰:', token ? `${token.substring(0, 20)}...` : '없음')
       
-      // 여러 엔드포인트 패턴 시도 (포스트맨과 동일한 방식)
-      const endpoints = [
-        'https://odorok.duckdns.org/api/me/userhealth',
-        'https://odorok.duckdns.org/api/user/health',
-        'https://odorok.duckdns.org/api/users/health',
-        'https://odorok.duckdns.org/api/health/update',
-        'https://odorok.duckdns.org/api/me/health'
-      ]
+      // 스웨거 명세에 맞는 바디 형식으로 변환
+      // healthData가 { data: {...} } 구조일 수 있으므로 처리
+      const actualData = healthData.data || healthData
       
-      // 포스트맨과 정확히 동일한 방식으로 시도
-      console.log('🔄 포스트맨 방식으로 시도...')
-      console.log('📤 전송할 데이터:', healthData)
-      
-      try {
-        const postmanResponse = await fetch('https://odorok.duckdns.org/api/me/userhealth', {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json;charset=UTF-8',
-            'Accept': '*/*',
-            'Origin': 'https://www.postman.com',
-            'Referer': 'https://www.postman.com',
-            'User-Agent': 'PostmanRuntime/7.32.3',
-            'Cache-Control': 'no-cache',
-            'Postman-Token': 'unique-postman-token-12345'
-          },
-          body: JSON.stringify(healthData)
-        })
-        
-        console.log('📥 포스트맨 응답 상태:', postmanResponse.status, postmanResponse.statusText)
-        console.log('📥 포스트맨 응답 헤더:', Object.fromEntries(postmanResponse.headers.entries()))
-        
-        if (postmanResponse.ok) {
-          const data = await postmanResponse.json()
-          console.log('✅ 포스트맨 방식으로 성공!', data)
-          showSuccess('건강정보가 성공적으로 수정되었습니다.')
-          return data
-        } else {
-          const errorText = await postmanResponse.text()
-          console.log('❌ 포스트맨 방식 실패:', postmanResponse.status, errorText)
-        }
-      } catch (err) {
-        console.log('❌ 포스트맨 방식 에러:', err.message)
+      const requestBody = {
+        gender: actualData.gender || true,
+        height: actualData.height || 0,
+        weight: actualData.weight || 0,
+        age: actualData.age || 0,
+        smoking: actualData.smoking || true,
+        drinkPerWeek: actualData.drinkPerWeek || 0,
+        exercisePerWeek: actualData.exercisePerWeek || 0,
+        diseaseList: actualData.diseaseList || []
       }
       
-      // 실제 브라우저 환경에서도 시도
-      console.log('🔄 실제 브라우저 환경으로 시도...')
-      try {
-        const browserResponse = await fetch('https://odorok.duckdns.org/api/me/userhealth', {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json;charset=UTF-8',
-            'Accept': 'application/json',
-            'Origin': window.location.origin,
-            'Referer': window.location.href,
-            'User-Agent': navigator.userAgent,
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          credentials: 'include',
-          body: JSON.stringify(healthData)
-        })
-        
-        console.log('📥 브라우저 응답 상태:', browserResponse.status, browserResponse.statusText)
-        console.log('📥 브라우저 응답 헤더:', Object.fromEntries(browserResponse.headers.entries()))
-        
-        if (browserResponse.ok) {
-          const data = await browserResponse.json()
-          console.log('✅ 브라우저 방식으로 성공!', data)
-          showSuccess('건강정보가 성공적으로 수정되었습니다.')
-          return data
-        } else {
-          const errorText = await browserResponse.text()
-          console.log('❌ 브라우저 방식 실패:', browserResponse.status, errorText)
-        }
-      } catch (err) {
-        console.log('❌ 브라우저 방식 에러:', err.message)
-      }
+      console.log('📤 전송할 데이터 (스웨거 명세):', requestBody)
       
-      for (let i = 0; i < endpoints.length; i++) {
-        const endpoint = endpoints[i]
-        console.log(`🔄 시도 ${i + 1}/${endpoints.length}: ${endpoint}`)
-        
-        try {
-          const response = await fetch(endpoint, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json;charset=UTF-8',
-              'Accept': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest',
-              'Origin': window.location.origin,
-              'Referer': window.location.href,
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            },
-            credentials: 'include',
-            body: JSON.stringify(healthData)
-          })
-          
-          if (response.ok) {
-            const data = await response.json()
-            console.log(`✅ 건강정보 수정 성공! (${endpoint})`, data)
-            showSuccess('건강정보가 성공적으로 수정되었습니다.')
-            return data
-          } else {
-            console.log(`❌ ${endpoint} 실패: ${response.status}`)
-          }
-        } catch (err) {
-          console.log(`❌ ${endpoint} 에러:`, err.message)
-        }
-      }
+      // 스웨거 명세: PUT /api/me/userhealth
+      const response = await fetch('https://odorok.duckdns.org/api/me/userhealth', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json;charset=UTF-8',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody)
+      })
       
-      // 모든 엔드포인트 실패 시 POST 방식도 시도
-      console.log('🔄 POST 방식으로 재시도...')
-      for (let i = 0; i < endpoints.length; i++) {
-        const endpoint = endpoints[i]
-        console.log(`🔄 POST 시도 ${i + 1}/${endpoints.length}: ${endpoint}`)
-        
-        try {
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json;charset=UTF-8',
-              'Accept': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest',
-              'Origin': window.location.origin,
-              'Referer': window.location.href,
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            },
-            credentials: 'include',
-            body: JSON.stringify(healthData)
-          })
-          
-          if (response.ok) {
-            const data = await response.json()
-            console.log(`✅ 건강정보 수정 성공! (POST ${endpoint})`, data)
-            showSuccess('건강정보가 성공적으로 수정되었습니다.')
-            return data
-          } else {
-            console.log(`❌ POST ${endpoint} 실패: ${response.status}`)
-          }
-        } catch (err) {
-          console.log(`❌ POST ${endpoint} 에러:`, err.message)
-        }
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ 건강정보 수정 성공!', data)
+        showSuccess('건강정보가 성공적으로 수정되었습니다.')
+        return data
+      } else {
+        console.log(`❌ 건강정보 수정 실패: ${response.status}`)
+        const errorText = await response.text()
+        console.log('❌ 에러 응답:', errorText)
+        throw new Error(`건강정보 수정 실패: ${response.status} - ${errorText}`)
       }
-      
-      throw new Error('모든 엔드포인트에서 건강정보 수정 실패')
     } catch (error) {
       console.error('건강정보 수정 실패:', error)
       handleApiError(error, '건강정보 수정')

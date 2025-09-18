@@ -107,8 +107,8 @@ export default {
       try {
         console.log('📡 API 호출 시작...')
         
-        // 먼저 백엔드 연결 테스트
-        await mypageService.testBackendEndpoints()
+        // 백엔드 연결 테스트 제거 (불필요한 API 호출 방지)
+        // await mypageService.testBackendEndpoints()
         
         // 각 API를 개별적으로 호출하여 어떤 것이 실패하는지 확인
         let profile, health, stats

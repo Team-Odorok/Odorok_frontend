@@ -223,34 +223,40 @@ export default {
         console.log('📝 후기 조회 시도...')
         
         // 방문한 코스에서 후기가 있는 것들만 필터링
-        const params = {
-          page: currentPage.value,
-          size: pageSize.value
-        }
-        
-        const response = await getVisitedCourses(params)
+        const response = await getVisitedCourses()
         console.log('✅ 방문한 코스 조회 성공:', response)
         
         if (response && response.data) {
-          const courses = response.data.items || response.data || []
+          // 새로운 응답 형식: reviewList 사용
+          const courses = response.data.reviewList || response.data.visitedCourses || response.data.coursesList || response.data.items || response.data || []
           console.log('🔍 방문한 코스 데이터 확인:', courses.length, '개')
+          console.log('🔍 courses 타입:', typeof courses, Array.isArray(courses))
+          console.log('🔍 전체 응답 구조:', response.data)
+          
+          // courses가 배열인지 확인
+          if (!Array.isArray(courses)) {
+            console.error('❌ courses가 배열이 아닙니다:', courses)
+            reviews.value = []
+            return
+          }
           
           // 각 코스의 후기 상태 확인
           courses.forEach((course, index) => {
-            const courseId = course.id || course.visitedCourseId
+            const courseId = course.courseId || course.id || course.visitedCourseId
             if (index < 5 || courseId === 7168) { // 처음 5개 + 방금 작성한 코스 (7168)
               console.log(`코스 ${index + 1}:`, {
                 id: courseId,
                 name: course.courseName || course.gilName,
-                hasReview: !!course.review,
-                reviewContent: course.review?.content || '없음',
-                reviewObject: course.review
+                hasReview: !!course.review || !!course.stars,
+                reviewContent: course.review || '없음',
+                stars: course.stars,
+                전체데이터: course
               })
             }
           })
           
-          // 후기가 있는 코스들만 필터링
-          const coursesWithReviews = courses.filter(course => course.review && course.review.content)
+          // 후기가 있는 코스들만 필터링 (새로운 형식에서는 모든 항목이 후기가 있음)
+          const coursesWithReviews = courses.filter(course => course.review || course.stars)
           console.log('🔍 후기가 있는 코스:', coursesWithReviews.length, '개')
           
           reviews.value = coursesWithReviews
@@ -335,13 +341,35 @@ export default {
       }
       
       try {
+        console.log('🔍 후기 저장 시 reviewForm:', reviewForm.value)
+        console.log('🔍 visitedCourseId:', reviewForm.value.visitedCourseId)
+        console.log('🔍 visitedCourseId 타입:', typeof reviewForm.value.visitedCourseId)
+        console.log('🔍 visitedCourseId 값들:', {
+          visitedCourseId: reviewForm.value.visitedCourseId,
+          courseId: reviewForm.value.courseId,
+          id: reviewForm.value.id
+        })
+        
+        // 실제 방문한 코스 ID 찾기
+        const courseId = reviewForm.value.visitedCourseId || reviewForm.value.courseId || reviewForm.value.id
+        console.log('🔍 사용할 courseId:', courseId)
+        
+        // ID가 없으면 에러
+        if (!courseId) {
+          console.error('❌ 방문한 코스 ID를 찾을 수 없습니다.')
+          console.log('🔍 reviewForm 전체 데이터:', JSON.stringify(reviewForm.value, null, 2))
+          alert('방문한 코스 정보를 찾을 수 없습니다. 페이지를 새로고침해주세요.')
+          return
+        }
+        
+        
         const reviewData = {
           rating: reviewForm.value.rating,
           content: reviewForm.value.content.trim(),
           imageFile: reviewForm.value.imageFile
         }
         
-        const result = await upsertVisitedCourseReview(reviewForm.value.visitedCourseId, reviewData)
+        const result = await upsertVisitedCourseReview(courseId, reviewData)
         
         console.log('🔍 후기 작성 결과:', result)
         
@@ -476,6 +504,7 @@ export default {
     }
 
     onMounted(() => {
+      console.log('📝 ReviewSection 마운트됨 - 데이터 로드 시작')
       loadReviews()
       
       // 외부에서 후기 작성 모달 열기 이벤트 리스너
@@ -484,14 +513,32 @@ export default {
         const { course, mode } = event.detail
         if (course && mode === 'write') {
           console.log('✅ 후기 작성 모달 열기:', course)
+          console.log('🔍 course 객체의 모든 키들:', Object.keys(course))
+          console.log('🔍 course 객체의 ID 관련 필드들:', {
+            id: course.id,
+            visitedCourseId: course.visitedCourseId,
+            courseId: course.courseId,
+            visitedId: course.visitedId,
+            visited_course_id: course.visited_course_id
+          })
+          
+          // 모든 가능한 ID 필드 확인
+          const courseId = course.visitedCourseId || course.visitedId || course.visited_course_id || course.id || course.courseId
+          console.log('🔍 선택된 courseId:', courseId)
+          
           reviewForm.value = {
             courseName: course.courseName || course.gilName || '',
             rating: 0,
             content: '',
-            visitedCourseId: course.visitedCourseId || course.id
+            visitedCourseId: courseId,
+            courseId: course.courseId,
+            id: course.id,
+            image: null,
+            imageFile: null
           }
           showReviewModal.value = true
           console.log('✅ 모달 상태 변경:', showReviewModal.value)
+          console.log('✅ 설정된 reviewForm:', reviewForm.value)
         }
       }
       

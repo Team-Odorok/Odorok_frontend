@@ -143,17 +143,28 @@ export default {
       try {
         console.log('🏃‍♂️ 방문한 코스 조회 시도...')
         
-        const params = {
-          page: currentPage.value,
-          size: pageSize.value
-        }
-        
-        const response = await getVisitedCourses(params)
+        const response = await getVisitedCourses()
         console.log('✅ 방문한 코스 조회 성공:', response)
         
         if (response && response.data) {
-          visitedCourses.value = response.data.items || response.data || []
+          // 새로운 응답 형식: reviewList 사용
+          const courses = response.data.reviewList || response.data.visitedCourses || response.data.coursesList || response.data.items || response.data || []
+          
+          // 새로운 형식에 맞춰 데이터 변환
+          visitedCourses.value = courses.map(course => ({
+            id: course.courseId || course.id || course.visitedCourseId,
+            visitedCourseId: course.courseId || course.visitedCourseId || course.id,
+            courseId: course.courseId || course.id,
+            courseName: course.courseName || course.gilName || '알 수 없는 코스',
+            hasReview: true,
+            reviewObject: {
+              rating: course.stars || course.rating || 0,
+              content: course.review || course.content || ''
+            }
+          }))
+          
           totalPages.value = response.data.totalPages || 1
+          console.log('🔍 방문한 코스 데이터:', visitedCourses.value.length, '개')
         } else if (Array.isArray(response)) {
           visitedCourses.value = response
           totalPages.value = 1
@@ -214,7 +225,7 @@ export default {
 
     // 코스 상세 보기
     const viewCourseDetail = (course) => {
-      const courseId = course.visitedCourseId || course.id
+      const courseId = course.courseId || course.visitedCourseId || course.id
       if (courseId) {
         router.push(`/visited-courses/${courseId}`)
       }
@@ -273,6 +284,7 @@ export default {
     }
 
     onMounted(() => {
+      console.log('🏃‍♂️ VisitedCoursesSection 마운트됨 - 데이터 로드 시작')
       loadVisitedCourses()
       
       // 후기 작성 후 새로고침 이벤트 리스너

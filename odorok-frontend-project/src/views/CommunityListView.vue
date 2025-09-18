@@ -86,7 +86,7 @@ export default {
     const currentPage = ref(1)
     const totalPages = ref(1)
     const sortBy = ref('createdAt')
-    const selectedDisease = ref('')
+    const selectedDisease = ref('') // 기본값: 전체 (메인 탭)
 
     const pageSize = ref(10)
     const currentPageNum = ref(1)
@@ -100,26 +100,39 @@ export default {
     const firstView = ref(null)
     const lastView = ref(null)
 
-    const applyArticleResponse = (response) => {
+    const applyArticleResponse = async (response) => {
       const body = response?.data ?? response
       const payload = body?.data ?? body
 
       console.log('🔍 서버 응답 구조:', response)
       console.log('🔍 payload:', payload)
+      console.log('🔍 extractArticles 결과:', extractArticles(payload))
+      console.log('🔍 resolveTotalPages 결과:', resolveTotalPages(payload))
       
-      if (payload?.articles && Array.isArray(payload.articles)) {
-        console.log('🔍 첫 번째 게시글:', payload.articles[0])
-        console.log('🔍 댓글 갯수 필드들:', {
-          commentCount: payload.articles[0]?.commentCount,
-          comments: payload.articles[0]?.comments,
-          comment: payload.articles[0]?.comment,
-          replyCount: payload.articles[0]?.replyCount,
-          replies: payload.articles[0]?.replies
-        })
-      }
-
       articles.value = extractArticles(payload)
       totalPages.value = resolveTotalPages(payload)
+      
+      // 각 게시글의 댓글 수 조회
+      if (articles.value && articles.value.length > 0) {
+        console.log('🔍 댓글 수 조회 시작...')
+        for (let article of articles.value) {
+          try {
+            const articleId = article.id || article.articleId || article.articleIdx
+            if (articleId) {
+              const commentsResponse = await communityApi.getComments(articleId)
+              const comments = commentsResponse?.data || commentsResponse || []
+              article.commentCount = Array.isArray(comments) ? comments.length : 0
+              console.log(`🔍 게시글 ${articleId} 댓글 수: ${article.commentCount}`)
+            }
+          } catch (error) {
+            console.error(`게시글 ${article.id} 댓글 수 조회 실패:`, error)
+            article.commentCount = 0
+          }
+        }
+      }
+      
+      console.log('🔍 최종 articles.value:', articles.value)
+      console.log('🔍 최종 totalPages.value:', totalPages.value)
 
       firstId.value = payload?.firstId ?? firstId.value
       lastId.value = payload?.lastId ?? lastId.value
@@ -137,10 +150,11 @@ export default {
         currentPageNum.value = toPage
 
         const commonParams = {
-          pageNum: toPage,
-          currentPageNum: currentPageNum.value,
-          pageSize: pageSize.value,
+          pageNum: toPage - 1,  // API는 0부터 시작
+          currentPageNum: toPage - 1,
+          pageSize: pageSize.value,  // 항상 10개
           sort: sortBy.value
+          // firstId, lastId 등은 null로 보내거나 아예 제외
         }
 
         let response
@@ -154,7 +168,7 @@ export default {
           response = await communityApi.getArticles(commonParams)
         }
 
-        applyArticleResponse(response)
+        await applyArticleResponse(response)
         currentPage.value = toPage
       } catch (err) {
         console.error('게시글 목록 조회 실패:', err)
@@ -194,6 +208,11 @@ export default {
       fetchArticles(currentPage.value)
     }
 
+    // 게시글 목록 새로고침 (좋아요/댓글 액션 후 호출)
+    const refreshArticles = () => {
+      fetchArticles(currentPage.value)
+    }
+
     onMounted(() => {
       // 로그인 상태 확인
       console.log('커뮤니티 페이지 로그인 상태:', userLoggedIn.value)
@@ -214,7 +233,8 @@ export default {
       handleArticleClick,
       goToWrite,
       handleDiseaseChange,
-      handleRetry
+      handleRetry,
+      refreshArticles
     }
   }
 }

@@ -43,6 +43,15 @@ export default {
     // 통계 라벨 매핑
     const getStatLabel = (key) => {
       const labels = {
+        // 서버에서 실제로 받아오는 키들
+        myPostCount: '작성 글 ',
+        likeCount: '좋아요 횟수',
+        diaryCount: '나의 오도록',
+        courseCount: '다녀온 코스',
+        distanceCount: '내가 걸은 거리',
+        attendanceCount: '전체 출석 일수',
+        
+        // 기존 키들도 유지 (호환성)
         totalDiaries: '총 일기',
         totalVisits: '총 방문',
         totalLikes: '총 좋아요',
