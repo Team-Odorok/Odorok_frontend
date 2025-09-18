@@ -78,12 +78,12 @@ export default {
 .diary-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  border-color: #007bff;
+  border-color: #B96664;
 }
 
 .card-image {
   height: 120px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #B96664 0%, #41687A 100%);
   position: relative;
   overflow: hidden;
 }
@@ -94,7 +94,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, #DDCDB5 0%, #ADC8B7 100%);
 }
 
 .placeholder-icon {

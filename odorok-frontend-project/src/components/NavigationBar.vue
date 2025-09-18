@@ -20,7 +20,7 @@
           나의 오도록
         </router-link>
         <router-link to="/mypage" class="nav-link">
-          마이페이지
+          나의 활동
         </router-link>
       </div>
 
@@ -167,6 +167,7 @@ export default {
   right: 0;
   z-index: 1000;
   width: 100%;
+  font-family: 'NanumMyeongjo', serif;
 }
 
 .navbar-container {
@@ -176,7 +177,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  height: 60px;
+  height: 80px;
 }
 
 /* 브랜드/로고 */
@@ -186,13 +187,14 @@ export default {
 
 .brand-link {
   text-decoration: none;
-  color: #667eea;
-  font-weight: bold;
-  font-size: 1.5rem;
+  color: #B96664;
+  font-family: 'NanumMyeongjoExtraBold', serif;
+  font-size: 2rem;
 }
 
 .brand-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'NanumMyeongjoExtraBold', serif;
+  background: linear-gradient(135deg, #B96664 0%, #41687A 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -211,22 +213,22 @@ export default {
 .nav-link {
   text-decoration: none;
   color: #333;
-  font-weight: 500;
-  padding: 8px 16px;
+  font-weight: normal;
+  padding: 12px 20px;
   border-radius: 6px;
   transition: all 0.3s ease;
   position: relative;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
 }
 
 .nav-link:hover {
-  color: #667eea;
-  background: #f8f9fa;
+  color: #B96664;
+  background: #DDCDB5;
 }
 
 .nav-link.router-link-active {
-  color: #667eea;
-  background: #f0f2ff;
+  color: #B96664;
+  background: #DDCDB5;
 }
 
 .nav-link.router-link-active::after {
@@ -237,7 +239,7 @@ export default {
   transform: translateX(-50%);
   width: 20px;
   height: 2px;
-  background: #667eea;
+  background: #B96664;
   border-radius: 1px;
 }
 
@@ -251,9 +253,9 @@ export default {
 
 .user-info {
   color: #666;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
-  padding: 8px 16px;
+  padding: 12px 20px;
   border-radius: 6px;
   background: #f8f9fa;
   border: 1px solid #e9ecef;
@@ -267,30 +269,30 @@ export default {
 }
 
 .user-link:hover {
-  color: #667eea;
-  background: #f0f2ff;
-  border-color: #667eea;
+  color: #B96664;
+  background: #DDCDB5;
+  border-color: #B96664;
   transform: translateY(-1px);
 }
 
 .login-btn, .logout-btn, .attendance-btn {
-  padding: 8px 16px;
+  padding: 12px 20px;
   border-radius: 6px;
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s ease;
   border: none;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .login-btn {
-  background: #667eea;
+  background: #41687A;
   color: white;
 }
 
 .login-btn:hover {
-  background: #5a6fd8;
+  background: #B96664;
   transform: translateY(-1px);
 }
 
@@ -306,12 +308,12 @@ export default {
 }
 
 .attendance-btn {
-  background: #28a745;
+  background: #ADC8B7;
   color: white;
 }
 
 .attendance-btn:hover {
-  background: #218838;
+  background: #9bb8a5;
   transform: translateY(-1px);
 }
 
@@ -319,7 +321,7 @@ export default {
 @media (max-width: 768px) {
   .navbar-container {
     padding: 0 15px;
-    height: 50px;
+    height: 70px;
   }
   
   .navbar-menu {
@@ -328,22 +330,22 @@ export default {
   }
   
   .nav-link {
-    padding: 6px 12px;
-    font-size: 0.9rem;
+    padding: 8px 14px;
+    font-size: 1rem;
   }
   
   .brand-text {
-    font-size: 1.3rem;
+    font-size: 1.7rem;
   }
   
   .user-info {
-    font-size: 0.8rem;
-    padding: 6px 12px;
+    font-size: 1rem;
+    padding: 8px 14px;
   }
   
   .user-link {
-    font-size: 0.8rem;
-    padding: 6px 12px;
+    font-size: 1rem;
+    padding: 8px 14px;
   }
 }
 
@@ -354,13 +356,13 @@ export default {
   }
   
   .nav-link {
-    padding: 4px 8px;
-    font-size: 0.8rem;
+    padding: 6px 10px;
+    font-size: 0.9rem;
   }
   
   .login-btn, .logout-btn, .attendance-btn {
-    padding: 6px 12px;
-    font-size: 0.8rem;
+    padding: 8px 14px;
+    font-size: 1rem;
   }
 }
 </style>

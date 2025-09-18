@@ -3,7 +3,7 @@
     <div class="community-header">
       <div class="community-heading">
         <h1>커뮤니티</h1>
-        <p>다른 사용자들과 경험을 나누고 정보를 공유해 보세요.</p>
+        <p>다른 사용자들과 경험을 나누고 정보를 공유해 보세요</p>
       </div>
       <div class="community-filters">
         <label for="diseaseFilter">질환 분류</label>

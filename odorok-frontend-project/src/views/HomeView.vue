@@ -237,6 +237,7 @@ export default {
 }
 
 .hero-title {
+  font-family: 'NanumMyeongjo', serif;
   font-size: 4rem;
   font-weight: bold;
   margin-bottom: 1rem;
@@ -244,6 +245,7 @@ export default {
 }
 
 .hero-subtitle {
+  font-family: 'NanumMyeongjo', serif;
   font-size: 1.5rem;
   margin-bottom: 2rem;
   opacity: 0.9;

@@ -3,7 +3,7 @@
     <div class="health-card">
       <div class="health-header">
         <h3>건강 정보</h3>
-        <button @click="$emit('edit-health')" class="edit-btn">상태 수정</button>
+        <button @click="$emit('edit-health')" class="edit-btn">정보 수정</button>
       </div>
       
       <div class="health-content" v-if="healthData?.data">

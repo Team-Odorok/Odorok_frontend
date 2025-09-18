@@ -2,44 +2,45 @@
   <div class="diary-list-container">
     <div class="diary-header">
       <h1>나의 오도록</h1>
-      <p class="diary-subtitle">여행 일지 목록</p>
+      <p class="diary-subtitle">소중한 순간들이 담긴 나만의 여행 이야기를 만들어 드릴게요</p>
     </div>
 
-    <!-- 연도 선택 드롭다운 -->
-    <div class="year-selector">
-      <label for="yearSelect">연도 선택:</label>
-      <select 
-        id="yearSelect" 
-        v-model="selectedYear" 
-        @change="onYearChange"
-        class="year-dropdown"
-      >
-        <option value="">전체 연도</option>
-        <option 
-          v-for="year in availableYears" 
-          :key="year" 
-          :value="year"
+    <!-- 필터 및 액션 섹션 -->
+    <div class="filter-action-section">
+      <div class="year-selector">
+        <label for="yearSelect">연도 선택:</label>
+        <select 
+          id="yearSelect" 
+          v-model="selectedYear" 
+          @change="onYearChange"
+          class="year-dropdown"
         >
-          {{ year }}년
-        </option>
-      </select>
-    </div>
-
-    <!-- 일지 생성 버튼 -->
-    <div class="create-diary-section">
-      <button 
-        @click="createDiary" 
-        :disabled="creatingDiary"
-        class="create-diary-btn"
-      >
-        {{ creatingDiary ? '권한 확인 중...' : '✏️ 새 일지 작성' }}
-      </button>
-      <button 
-        @click="showPurchaseModal = true"
-        class="purchase-btn"
-      >
-        💳 일지 생성권 구매
-      </button>
+          <option value="">전체 연도</option>
+          <option 
+            v-for="year in availableYears" 
+            :key="year" 
+            :value="year"
+          >
+            {{ year }}년
+          </option>
+        </select>
+      </div>
+      
+      <div class="action-buttons">
+        <button 
+          @click="createDiary" 
+          :disabled="creatingDiary"
+          class="create-diary-btn"
+        >
+          {{ creatingDiary ? '권한 확인 중...' : '✏️ 새 일지 작성' }}
+        </button>
+        <button 
+          @click="showPurchaseModal = true"
+          class="purchase-btn"
+        >
+          💳 일지 생성권 구매
+        </button>
+      </div>
     </div>
 
     <!-- 로딩 상태 -->
@@ -858,7 +859,7 @@ export default {
 }
 
 .diary-header {
-  text-align: center;
+  text-align: left;
   margin-bottom: 40px;
 }
 
@@ -874,12 +875,24 @@ export default {
   margin: 0;
 }
 
+/* 필터 및 액션 섹션 */
+.filter-action-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 20px;
+}
+
 .year-selector {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 30px;
   gap: 15px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 20px;
 }
 
 .year-selector label {
@@ -909,15 +922,9 @@ export default {
   border-color: #007bff;
 }
 
-.create-diary-section {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-bottom: 30px;
-}
 
 .create-diary-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #41687A 0%, #B96664 100%);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -930,7 +937,7 @@ export default {
 
 .create-diary-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  box-shadow: 0 4px 15px rgba(65, 104, 122, 0.3);
 }
 
 .create-diary-btn:disabled {
@@ -1001,7 +1008,7 @@ export default {
 }
 
 .month-summary-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #B96664 0%, #41687A 100%);
   color: white;
   border-radius: 12px;
   padding: 20px;
@@ -1158,10 +1165,12 @@ export default {
 
 .current-diary-detail {
   margin-bottom: 30px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .current-diary-detail .diary-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #B96664 0%, #41687A 100%);
   color: white;
   padding: 25px;
   border-radius: 8px;
@@ -1496,9 +1505,11 @@ export default {
   border-radius: 12px;
   max-width: 90%;
   max-height: 90%;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
   width: 800px;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-close {
@@ -1531,10 +1542,12 @@ export default {
 /* 일지 상세 모달 */
 .diary-detail {
   padding: 30px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .diary-detail .diary-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #B96664 0%, #41687A 100%);
   color: white;
   padding: 25px;
   border-radius: 8px;
@@ -1837,9 +1850,18 @@ export default {
     font-size: 2rem;
   }
   
-  .year-selector {
+  .filter-action-section {
     flex-direction: column;
-    gap: 10px;
+    align-items: stretch;
+    gap: 15px;
+  }
+  
+  .year-selector {
+    justify-content: center;
+  }
+  
+  .action-buttons {
+    justify-content: center;
   }
   
   .month-title {
@@ -1944,7 +1966,7 @@ export default {
 
 /* 구매 버튼 스타일 */
 .purchase-btn {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background: linear-gradient(135deg, #DDCDB5 0%, #B96664 100%);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -1957,7 +1979,7 @@ export default {
 
 .purchase-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(185, 102, 100, 0.3);
 }
 
 .purchase-btn:active {

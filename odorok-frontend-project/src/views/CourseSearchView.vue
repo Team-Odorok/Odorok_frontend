@@ -1,29 +1,36 @@
 <template>
-  <div style="display: flex; gap: 32px; align-items: flex-start;">
-    <div style="flex:1; min-width: 350px; max-width: 500px;">
-      <KakaoMap
-        :pathPoints="selectedCourse && courseDetail && courseDetail.coords ? courseDetail.coords : []"
-        :courseId="selectedCourse ? selectedCourse.id : 'all'"
-        :attractions="attractionsWithEndPoint"
-      />
-    </div>
-    <!-- 리스트/상세 영역 -->
-    <div style="flex:2; min-width: 350px;">
-      <div style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
+  <div class="course-search-container">
+    <!-- 페이지 헤더 -->
+    <div class="course-search-header">
+      <div class="header-title">
         <h1>코스검색</h1>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <label style="font-size:14px; color:#666;">정렬</label>
-          <select v-model="sortBy" @change="handleSortChange" style="padding:6px 8px; border:1px solid #dee2e6; border-radius:4px;">
-            <option value="createdAt">최신순</option>
-            <option value="rating,desc">별점 높은 순</option>
-            <option value="rating,asc">별점 낮은 순</option>
-          </select>
-          <button @click="showAttendance = true" style="padding:6px 10px; border:1px solid #dee2e6; border-radius:4px; background:#fff; cursor:pointer;">출석 모달</button>
-        </div>
+        <p class="header-subtitle">다양한 여행 코스를 검색하고 맞춤 코스를 추천 받아 보세요</p>
       </div>
+      <div class="header-controls">
+        <label style="font-size:14px; color:#666;">정렬</label>
+        <select v-model="sortBy" @change="handleSortChange" style="padding:6px 8px; border:1px solid #dee2e6; border-radius:4px;">
+          <option value="createdAt">최신순</option>
+          <option value="rating,desc">별점 높은 순</option>
+          <option value="rating,asc">별점 낮은 순</option>
+        </select>
+        <button @click="showAttendance = true" style="padding:6px 10px; border:1px solid #dee2e6; border-radius:4px; background:#fff; cursor:pointer;">출석 모달</button>
+      </div>
+    </div>
+
+    <div class="course-search-content">
+      <div class="map-section">
+        <KakaoMap
+          :pathPoints="selectedCourse && courseDetail && courseDetail.coords ? courseDetail.coords : []"
+          :courseId="selectedCourse ? selectedCourse.id : 'all'"
+          :attractions="attractionsWithEndPoint"
+        />
+      </div>
+      <!-- 리스트/상세 영역 -->
+      <div class="list-section">
       
       <!-- 로딩 상태 표시 -->
-      <div v-if="loading" style="text-align: center; padding: 20px;">
+      <div v-if="loading" class="loading">
+        <div class="loading-spinner"></div>
         <p>코스 데이터를 불러오는 중...</p>
       </div>
       
@@ -67,6 +74,7 @@
           :total-pages="totalPagesCustom"
           @page-changed="onPageChangeCustom"
         />
+      </div>
       </div>
     </div>
     <AttendanceModel :visible="showAttendance" @close="showAttendance=false" />
@@ -268,5 +276,113 @@ button:disabled {
   background: #6c757d;
   color: white;
   cursor: not-allowed;
+}
+
+/* 로딩 스피너 스타일 */
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 컨테이너 스타일 - 다른 페이지와 일치 */
+.course-search-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 페이지 헤더 스타일 */
+.course-search-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+}
+
+.header-title {
+  flex: 1;
+}
+
+.course-search-header h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin: 0 0 10px 0;
+}
+
+.header-subtitle {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.course-search-content {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.map-section {
+  flex: 1;
+  min-width: 350px;
+  max-width: 500px;
+}
+
+.list-section {
+  flex: 2;
+  min-width: 350px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .course-search-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+  
+  .course-search-header h1 {
+    font-size: 2rem;
+  }
+  
+  .header-subtitle {
+    font-size: 1rem;
+  }
+  
+  .header-controls {
+    justify-content: center;
+  }
+  
+  .course-search-content {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .map-section,
+  .list-section {
+    min-width: auto;
+    max-width: none;
+  }
 }
 </style> 

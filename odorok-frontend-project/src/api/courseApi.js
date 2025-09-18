@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // 환경변수로 API URL 관리 (개발/운영 환경 분리)
-// 기본값을 'https://odorok.duckdns.org/api'로 설정
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://odorok.duckdns.org/api';
+// 기본값을 '/api'로 두어 프록시를 통해 백엔드로 전달되도록 함
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // axios 인스턴스 생성
 const apiClient = axios.create({
@@ -174,7 +174,7 @@ const courseApi = {
       const token = localStorage.getItem('accessToken')
       console.log(`🔍 코스 ${courseId} 상세 조회 시도...`)
       
-      const response = await fetch(`${API_BASE_URL}/courses/detail?courseId=${courseId}`, {
+      const response = await fetch(`https://odorok.duckdns.org/api/courses/detail?courseId=${courseId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

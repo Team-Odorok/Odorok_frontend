@@ -4,7 +4,7 @@
       <div class="activity-header">
         <h3>활동내역</h3>
         <button @click="$emit('refresh')" class="refresh-btn" :disabled="refreshing">
-          {{ refreshing ? '새로고침 중...' : '🔄 새로고침' }}
+          {{ refreshing ? '새로고침 중...' : '새로고침' }}
         </button>
       </div>
       

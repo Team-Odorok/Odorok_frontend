@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // API 기본 설정 (환경변수 우선, 기본값 fallback)
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'https://odorok.duckdns.org/api'
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -122,7 +122,7 @@ export const communityApi = {
       console.log(`🔍 게시글 ${articleId} 상세 조회 시도...`)
       
       // fetch API로 직접 요청 (CSRF 문제 우회)
-      const response = await fetch(`${API_BASE_URL}/articles/${articleId}`, {
+      const response = await fetch(`https://odorok.duckdns.org/api/articles/${articleId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -222,7 +222,7 @@ export const communityApi = {
       const token = localStorage.getItem('accessToken')
       console.log(`💬 게시글 ${articleId} 댓글 목록 조회 시도...`)
       
-      const response = await fetch(`${API_BASE_URL}/articles/${articleId}/comments?page=${page}`, {
+      const response = await fetch(`https://odorok.duckdns.org/api/articles/${articleId}/comments?page=${page}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

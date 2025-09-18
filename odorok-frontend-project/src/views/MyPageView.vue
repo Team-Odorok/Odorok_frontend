@@ -1,5 +1,11 @@
 <template>
   <div class="mypage-container">
+    <!-- 페이지 헤더 -->
+    <div class="mypage-header">
+      <h1>나의 활동</h1>
+      <p class="mypage-subtitle">나의 정보와 활동 내역을 확인하세요</p>
+    </div>
+
     <!-- 기본정보 섹션 -->
     <BasicInfoSection 
       :profile-data="profileData"
@@ -235,6 +241,24 @@ export default {
   min-height: 100vh;
 }
 
+/* 페이지 헤더 스타일 */
+.mypage-header {
+  text-align: left;
+  margin-bottom: 40px;
+}
+
+.mypage-header h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.mypage-subtitle {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0;
+}
+
 .loading {
   text-align: center;
   padding: 40px;
@@ -323,6 +347,14 @@ export default {
 @media (max-width: 768px) {
   .mypage-container {
     padding: 15px;
+  }
+  
+  .mypage-header h1 {
+    font-size: 2rem;
+  }
+  
+  .mypage-subtitle {
+    font-size: 1rem;
   }
 }
 </style>
