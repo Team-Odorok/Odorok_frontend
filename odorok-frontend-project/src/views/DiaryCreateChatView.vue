@@ -24,6 +24,23 @@
 
           <!-- 일지 생성 완료 상태 -->
       <div v-else-if="isCompleted" class="diary-completion">
+        <!-- 일지 재생성 중 오버레이 -->
+        <div v-if="isRegenerating" class="regeneration-overlay">
+          <div class="regeneration-spinner">
+            <div class="spinner"></div>
+            <p>일지를 재생성하고 있습니다...</p>
+            <p class="regeneration-subtitle">잠시만 기다려주세요</p>
+          </div>
+        </div>
+        
+        <!-- 일지 저장 중 오버레이 -->
+        <div v-if="isSavingDiary" class="saving-overlay">
+          <div class="saving-spinner">
+            <div class="spinner"></div>
+            <p>일지를 저장하고 있습니다...</p>
+            <p class="saving-subtitle">잠시만 기다려주세요</p>
+          </div>
+        </div>
         <!-- 완료 알림 -->
         <div v-if="showCompletionNotification" class="completion-notification">
           <div class="notification-content">
@@ -132,8 +149,9 @@
               v-if="canRegenerate" 
               @click="openRegenerateForm"
               class="regenerate-btn"
+              :disabled="isRegenerating"
             >
-              재생성
+              {{ isRegenerating ? '재생성 중...' : '재생성' }}
             </button>
             <button 
               v-if="!isEditingContent" 
@@ -146,8 +164,8 @@
               <button @click="saveContent" class="save-content-btn">수정완료</button>
               <button @click="cancelEditContent" class="cancel-content-btn">취소</button>
             </div>
-            <button @click="handleSaveDiary" class="save-btn">
-              저장
+            <button @click="handleSaveDiary" class="save-btn" :disabled="isSavingDiary">
+              {{ isSavingDiary ? '저장 중...' : '저장' }}
             </button>
           </div>
 
@@ -277,6 +295,7 @@ export default {
     const isCompleted = ref(false)
     const isProcessing = ref(false)
     const isGeneratingDiary = ref(false) // 일지 생성 중 상태
+    const isSavingDiary = ref(false) // 일지 저장 중 상태
     const userInput = ref('')
     const chatMessages = ref([])
     const chatWindow = ref(null)
@@ -747,6 +766,8 @@ export default {
         return
       }
       
+      isSavingDiary.value = true
+      
       try {
         // 실제 API 호출
         const imageFiles = attachedImages.value.map(img => img.file)
@@ -764,6 +785,8 @@ export default {
         }
       } catch (err) {
         error.value = err.message || '일지 저장에 실패했습니다.'
+      } finally {
+        isSavingDiary.value = false
       }
     }
 
@@ -786,6 +809,7 @@ export default {
       isCompleted,
       isProcessing,
       isGeneratingDiary,
+      isSavingDiary,
       userInput,
       chatMessages,
       chatWindow,
@@ -904,6 +928,100 @@ export default {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* 일지 재생성 중 오버레이 */
+.regeneration-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 12px;
+}
+
+.regeneration-spinner {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+}
+
+.regeneration-spinner .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #ffc107;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+.regeneration-spinner p {
+  font-size: 1.1rem;
+  color: #333;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.regeneration-subtitle {
+  font-size: 0.9rem !important;
+  color: #666 !important;
+  font-weight: 400 !important;
+}
+
+/* 일지 저장 중 오버레이 */
+.saving-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 12px;
+}
+
+.saving-spinner {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+}
+
+.saving-spinner .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #28a745;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+.saving-spinner p {
+  font-size: 1.1rem;
+  color: #333;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.saving-subtitle {
+  font-size: 0.9rem !important;
+  color: #666 !important;
+  font-weight: 400 !important;
 }
 
 .error-icon, .completion-icon {
@@ -1316,9 +1434,16 @@ export default {
   color: #333;
 }
 
-.regenerate-btn:hover {
+.regenerate-btn:hover:not(:disabled) {
   background: #e0a800;
   transform: translateY(-1px);
+}
+
+.regenerate-btn:disabled {
+  background: #6c757d;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .image-btn {
@@ -1336,9 +1461,15 @@ export default {
   color: white;
 }
 
-.save-btn:hover {
+.save-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.save-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 
@@ -1763,6 +1894,42 @@ export default {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 10px;
   }
+  
+  .regeneration-spinner {
+    padding: 30px 20px;
+    max-width: 250px;
+  }
+  
+  .regeneration-spinner .spinner {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .regeneration-spinner p {
+    font-size: 1rem;
+  }
+  
+  .regeneration-subtitle {
+    font-size: 0.85rem !important;
+  }
+  
+  .saving-spinner {
+    padding: 30px 20px;
+    max-width: 250px;
+  }
+  
+  .saving-spinner .spinner {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .saving-spinner p {
+    font-size: 1rem;
+  }
+  
+  .saving-subtitle {
+    font-size: 0.85rem !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1838,6 +2005,42 @@ export default {
   
   .no-images-message p {
     font-size: 0.9rem;
+  }
+  
+  .regeneration-spinner {
+    padding: 25px 15px;
+    max-width: 200px;
+  }
+  
+  .regeneration-spinner .spinner {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .regeneration-spinner p {
+    font-size: 0.9rem;
+  }
+  
+  .regeneration-subtitle {
+    font-size: 0.8rem !important;
+  }
+  
+  .saving-spinner {
+    padding: 25px 15px;
+    max-width: 200px;
+  }
+  
+  .saving-spinner .spinner {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .saving-spinner p {
+    font-size: 0.9rem;
+  }
+  
+  .saving-subtitle {
+    font-size: 0.8rem !important;
   }
 }
 

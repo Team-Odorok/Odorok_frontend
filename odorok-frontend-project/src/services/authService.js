@@ -76,6 +76,17 @@ export const signup = async (email, password, nickname) => {
 
 // 카카오 로그인 후 URL 파라미터에서 토큰 처리
 export const handleKakaoLoginCallback = () => {
+  // 현재 URL이 백엔드 API 엔드포인트인 경우 처리
+  if (window.location.pathname.includes('/api/auth/oauth2/kakao')) {
+    const urlParams = new URLSearchParams(window.location.search)
+    const code = urlParams.get('code')
+    if (code) {
+      // 프론트엔드 앱으로 리다이렉트
+      window.location.href = `/?code=${code}`
+      return false
+    }
+  }
+  
   const urlParams = new URLSearchParams(window.location.search)
   
   // 다양한 토큰 파라미터 이름 지원
