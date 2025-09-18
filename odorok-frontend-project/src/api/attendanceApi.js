@@ -1,11 +1,6 @@
 import axios from 'axios'
 
-<<<<<<< HEAD
-// 환경변수가 없으면 기본값 사용
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://odorok.duckdns.org:8080'
-=======
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'https://odorok.duckdns.org/api'
->>>>>>> ea8b0f31e6c1b4af895f46aeb708b6e7ecb95b84
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'https://odorok.duckdns.org/'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
