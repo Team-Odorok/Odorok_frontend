@@ -1,20 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
-<<<<<<< HEAD
 import HomeView from '@/views/HomeView.vue'
-=======
->>>>>>> ea8b0f31e6c1b4af895f46aeb708b6e7ecb95b84
 import DiaryListView from '@/views/DiaryListView.vue'
 import DiaryDetailView from '@/views/DiaryDetailView.vue'
 import DiaryCreateStyleView from '@/views/DiaryCreateStyleView.vue'
 import DiaryCreateChatView from '@/views/DiaryCreateChatView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SignupView from '@/views/SignupView.vue'
-<<<<<<< HEAD
 import MyPageView from '@/views/MyPageView.vue'
-=======
->>>>>>> ea8b0f31e6c1b4af895f46aeb708b6e7ecb95b84
 import CourseSearchView from '../views/CourseSearchView.vue'
-import MyPageView from '../views/MyPageView.vue'
 import { isLoggedIn, logout } from '@/services/authService'
 
 const router = createRouter({
