@@ -1,0 +1,73 @@
+// ë¡œê·¸?? ë¡œê·¸?„ì›ƒ, ? í° ê´€ë¦????¸ì¦ ê´€??ë¹„ì¦ˆ?ˆìŠ¤ ë¡œì§ ?´ë‹¹
+import authClient from './authClient'
+
+// ë¡œê·¸???¨ìˆ˜
+export const login = async (username, password) => {
+  try {
+    const formData = new FormData()
+    formData.append('username', username)
+    formData.append('password', password)
+
+    const response = await authClient.post('/auth/login', formData)
+    return handleLoginResponse(response)
+    
+  } catch (error) {
+    console.error('ë¡œê·¸???¤íŒ¨:', error.response?.status, error.response?.statusText)
+    throw error
+  }
+}
+
+// ë¡œê·¸???‘ë‹µ ì²˜ë¦¬ ?¨ìˆ˜
+const handleLoginResponse = (response) => {
+  // ? í° ì¶”ì¶œ ë¡œì§
+  let token = response.headers?.authorization || response.headers?.Authorization
+  
+  // Bearer ?‘ë‘???œê±°
+  if (token && token.startsWith('Bearer ')) {
+    token = token.substring(7)
+  }
+  
+  // ?¤ë”??? í°???†ìœ¼ë©??‘ë‹µ ?°ì´?°ì—???•ì¸
+  if (!token && response.data) {
+    token = response.data.accessToken || response.data.token || response.data.access_token
+  }
+  
+  if (token) {
+    localStorage.setItem('accessToken', token)
+    console.log('ë¡œê·¸???±ê³µ! ? í° ?€?¥ë¨')
+  } else {
+    console.warn('ë¡œê·¸???±ê³µ?ˆì?ë§?? í°???†ìŠµ?ˆë‹¤.')
+  }
+
+  return response
+}
+
+// ë¡œê·¸?„ì›ƒ ?¨ìˆ˜
+export const logout = () => {
+  localStorage.removeItem('accessToken')
+}
+
+// ?„ì¬ ë¡œê·¸???íƒœ ?•ì¸
+export const isLoggedIn = () => {
+  return !!localStorage.getItem('accessToken')
+}
+
+// ? í° ê°€?¸ì˜¤ê¸?export const getAccessToken = () => {
+  return localStorage.getItem('accessToken')
+}
+
+// ?Œì›ê°€??export const signup = async (email, password, nickname) => {
+  try {
+    const response = await authClient.post('/auth/signup', {
+      email: email,
+      password: password,
+      nickname: nickname
+    })
+    
+    console.log('?Œì›ê°€???±ê³µ:', response)
+    return response
+  } catch (error) {
+    console.error('?Œì›ê°€???¤íŒ¨:', error.response?.status, error.response?.statusText)
+    throw error
+  }
+}

@@ -51,10 +51,22 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   response => response,
   error => {
-    console.error('API 요청 실패:', error);
-    return Promise.reject(error);
+    if (error.response?.status === 401) {
+      // 토큰이 만료되었거나 유효하지 않은 경우
+      console.warn('인증이 만료되었습니다. 로그아웃 처리합니다.')
+      localStorage.removeItem('accessToken')
+      
+      // 현재 페이지가 로그인 페이지가 아닌 경우에만 로그인 페이지로 리다이렉트
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    } else if (error.response?.status >= 500) {
+      console.error('Server error:', error.response?.status, error.response?.statusText)
+    }
+
+    return Promise.reject(error)
   }
-);
+)
 
 // 새로고침 감지 및 요청 정리
 const handleBeforeUnload = () => {
@@ -78,6 +90,47 @@ const courseApi = {
     pendingRequests.clear();
     requestCache.clear();
     console.log('모든 요청 정리 완료');
+  },
+
+  startCourse: async (courseId) => {
+    try {
+      const response = await apiClient.post(`/course/${courseId}/start`)
+      return response.data
+    } catch (error) {
+      console.error('코스 시작 요청 실패:', error)
+      throw error
+    }
+  },
+
+  endCourse: async (courseId) => {
+    try {
+      const response = await apiClient.post(`/course/${courseId}/end`)
+      return response.data
+    } catch (error) {
+      console.error('코스 종료 요청 실패:', error)
+      throw error
+    }
+  },
+
+  getCourseDistance: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/course/${courseId}/distance`)
+      return response.data
+    } catch (error) {
+      console.error('코스 거리 조회 실패:', error)
+      throw error
+    }
+  },
+
+  getUserRegionCourses: async (email, page = 0, size = 10, sort = 'rating,desc') => {
+    try {
+      const params = { email, page, size, sort }
+      const response = await apiClient.get('/courses/user-region', { params })
+      return response.data
+    } catch (error) {
+      console.error('사용자 지역 코스 조회 실패:', error)
+      throw error
+    }
   },
 
   // 전체 코스 목록 조회
@@ -118,10 +171,25 @@ const courseApi = {
   // 코스 상세 정보 조회
   getCourseDetail: async (courseId) => {
     try {
-      const response = await apiClient.get('/courses/detail', { 
-        params: { courseId } 
-      });
-      return response.data;
+      const token = localStorage.getItem('accessToken')
+      console.log(`🔍 코스 ${courseId} 상세 조회 시도...`)
+      
+      const response = await fetch(`https://odorok.duckdns.org/api/courses/detail?courseId=${courseId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log(`✅ 코스 ${courseId} 상세 조회 성공!`, data)
+        return data
+      } else {
+        console.log(`❌ 코스 ${courseId} 상세 조회 실패: ${response.status}`)
+        throw new Error(`코스 상세 조회 실패: ${response.status}`)
+      }
     } catch (error) {
       console.error('코스 상세 정보 조회 실패:', error);
       throw error;
@@ -207,11 +275,9 @@ const courseApi = {
   },
 
   // TOP 코스(별점/방문/리뷰) 조회
-  getTopCourses: async (email) => {
+  getTopCourses: async () => {
     try {
-      const params = {}
-      if (email) params.email = email
-      const response = await apiClient.get('/courses/top', { params })
+      const response = await apiClient.get('/courses/top')
       return response.data
     } catch (error) {
       console.error('TOP 코스 조회 실패:', error)
@@ -220,9 +286,9 @@ const courseApi = {
   },
 
   // 사용자 질병 코스 리스트 조회
-  getDiseaseCourses: async (email, diseaseId = null, page = 0, size = 10, sort = 'created_at, asc') => {
+  getDiseaseCourses: async (diseaseId = null, page = 0, size = 10, sort = 'created_at, asc') => {
     try {
-      const params = { email, page, size, sort }
+      const params = { page, size, sort }
       if (diseaseId !== null && diseaseId !== undefined) params.diseaseId = diseaseId
       const response = await apiClient.get('/courses/disease', { params })
       return response.data
@@ -258,26 +324,27 @@ const courseApi = {
     }
   },
 
-  // 예정 등록
-  registerSchedule: async (courseId, dueDate, email, attractionIds) => {
-    try {
-      const response = await apiClient.post('/courses/schedule', {
-        courseId,
-        dueDate,
-        email,
-        attractionIds
-      });
-      return response.data;
-    } catch (error) {
-      console.error('예정 등록 실패:', error);
-      throw error;
-    }
-  },
+    // 예정 등록 (Swagger 문서 기준)
+    registerSchedule: async (courseId, dueDate, attractionIds) => {
+      try {
+        const requestData = {
+          courseId: Number(courseId),
+          dueDate: dueDate,
+          attractionIds: attractionIds || []
+        }
+        
+        const response = await apiClient.post('/courses/schedule', requestData);
+        return response.data;
+      } catch (error) {
+        console.error('예정 등록 실패:', error);
+        throw error;
+      }
+    },
 
   // 방문 예정 리스트 조회
   getScheduledCourses: async (email) => {
     try {
-      const response = await apiClient.get('/course/schedule', { params: { email } });
+      const response = await apiClient.get('/courses/schedule', { params: { email } });
       return response.data;
     } catch (error) {
       throw error;

@@ -1,9 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL
-if (!API_BASE_URL) {
-  throw new Error('VITE_API_BASE_URL이 설정되지 않았습니다.')
-}
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'https://odorok.duckdns.org/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,

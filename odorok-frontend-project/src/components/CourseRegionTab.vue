@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="section">
     <div class="head">
       <h2>지역별 코스</h2>
@@ -17,7 +17,7 @@
       </div>
     </div>
 
-    <!-- 상단 리스트 -->
+    <!-- 지역 리스트 -->
     <div class="listwrap card">
       <div v-if="loading" class="state">코스 데이터를 불러오는 중...</div>
       <ul v-else-if="regionCourses.length > 0" class="list">
@@ -29,14 +29,14 @@
           </div>
           <div class="chips">
             <span class="chip">난이도 {{ course.difficulty }}</span>
-            <span class="chip rating">⭐ {{ course.rating }}</span>
+            <span class="chip rating">별점 {{ course.rating }}</span>
           </div>
         </li>
       </ul>
       <div v-else class="state">해당 지역의 코스 데이터가 없습니다.</div>
     </div>
 
-    <!-- 하단 디테일 -->
+    <!-- 상세 정보 -->
     <div class="detail card" v-if="selectedCourse">
       <div class="detail-head">
         <div class="name">{{ selectedCourse.name }}</div>
@@ -44,7 +44,7 @@
           <span class="chip">거리 {{ selectedCourse.distance }}km</span>
           <span class="chip">난이도 {{ selectedCourse.difficulty }}</span>
           <span class="chip">예상 {{ selectedCourse.reqTime }}</span>
-          <span class="chip rating">⭐ {{ selectedCourse.rating }}</span>
+          <span class="chip rating">별점 {{ selectedCourse.rating }}</span>
         </div>
         <div class="actions">
           <button class="btn outline" @click="goNearby" :disabled="!courseDetail || !courseDetail.coords || !courseDetail.coords.length">주변 명소 보기</button>
@@ -72,6 +72,7 @@
 <script>
 import KakaoMap from './KakaoMap.vue'
 import courseApi from '../api/courseApi.js'
+import { getAuthUser } from '@/services/authService.js'
 import CourseReviewComponent from './CourseReviewComponent.vue'
 import ScheduleRegistrationModal from './ScheduleRegistrationModal.vue'
 
@@ -97,9 +98,10 @@ export default {
       selectedSido: '',
       selectedSigungu: '',
       regionCourses: [],
+      userRegionLoading: false,
       sidoList: [],
       sigunguList: [],
-      showScheduleModal: false // 예정 등록 모달 표시 여부
+      showScheduleModal: false // 방문 예정 모달 표시 여부
     }
   },
   computed: {
@@ -110,7 +112,7 @@ export default {
         ...this.attractions,
         {
           attractionId: 'END',
-          title: '도착점',
+          title: '종점',
           latitude: endCoord.latitude,
           longitude: endCoord.longitude,
           isEndPoint: true
@@ -131,6 +133,7 @@ export default {
   async mounted() {
     // 컴포넌트 로드 시 시도 목록 조회
     await this.loadSidos();
+    await this.loadUserRegionCourses();
   },
   methods: {
     selectCourse(course) {
@@ -172,10 +175,34 @@ export default {
           this.sidoList = response.data;
         }
         console.log('로드된 시도 목록:', this.sidoList);
-        // API 응답이 없으면 기본 시도 목록 유지
+        // API 응답이 없으면 기본 시도 목록 설정
       } catch (error) {
         console.error('시도 목록 조회 실패:', error);
-        // 에러 발생 시 기본 시도 목록 유지
+        // 에러 발생 시 기본 시도 목록 설정
+      }
+    },
+    async loadUserRegionCourses() {
+      this.userRegionLoading = true
+      try {
+        const authUser = getAuthUser()
+        const email = authUser?.email || authUser?.sub
+        if (!email) {
+          this.userRegionLoading = false
+          return
+        }
+        const response = await courseApi.getUserRegionCourses(email)
+        const body = response?.data || response
+        if (body?.status === 'success' && body?.data?.courses) {
+          this.regionCourses = this.normalizeCourseData(body.data.courses)
+        } else if (Array.isArray(body?.courses)) {
+          this.regionCourses = this.normalizeCourseData(body.courses)
+        } else if (Array.isArray(body)) {
+          this.regionCourses = this.normalizeCourseData(body)
+        }
+      } catch (error) {
+        console.error('사용자 지역 코스 조회 실패:', error)
+      } finally {
+        this.userRegionLoading = false
       }
     },
     async onSidoChange() {
@@ -183,17 +210,17 @@ export default {
       this.sigunguList = [];
       this.regionCourses = [];
       
-      // 시도가 선택된 경우에만 시군구 목록 조회
+      // 시도가 선택된 경우만 시군구 목록 조회
       if (this.selectedSido) {
         try {
           const response = await courseApi.getSigungus(this.selectedSido);
-          console.log('시군구 API 응답:', response);
+          console.log('시군구API 응답:', response);
           if (response && response.status === 'success' && response.data && response.data.items) {
             this.sigunguList = response.data.items;
           } else if (response && response.data && Array.isArray(response.data)) {
             this.sigunguList = response.data;
           } else {
-            console.warn('시군구 API 응답이 예상과 다릅니다:', response);
+            console.warn('시군구API 응답이 예상과 다릅니다:', response);
             this.sigunguList = [];
           }
           console.log('로드된 시군구 목록:', this.sigunguList);
@@ -204,7 +231,7 @@ export default {
       }
     },
     async searchByRegion() {
-      console.log('searchByRegion 호출됨');
+      console.log('searchByRegion 호출');
       console.log('selectedSido:', this.selectedSido);
       console.log('selectedSigungu:', this.selectedSigungu);
       
@@ -228,10 +255,10 @@ export default {
         
         if (response && response.status === 'success' && response.data && response.data.items) {
           this.regionCourses = this.normalizeCourseData(response.data.items);
-          console.log('로드된 지역 코스:', this.regionCourses);
+          console.log('로드된 지역별 코스:', this.regionCourses);
         } else if (response && response.data && Array.isArray(response.data)) {
           this.regionCourses = this.normalizeCourseData(response.data);
-          console.log('로드된 지역 코스 (배열):', this.regionCourses);
+          console.log('로드된 지역별 코스 (배열):', this.regionCourses);
         } else {
           console.warn('지역별 코스 API 응답이 예상과 다릅니다:', response);
           this.regionCourses = [];
@@ -246,7 +273,7 @@ export default {
     
     handleScheduleRegistered() {
       console.log('방문 예정이 등록되었습니다.')
-      // 여기에 추가 로직을 넣을 수 있습니다
+      // 필요시 추가 로직을 구현하겠습니다
     },
     async fetchCourseDetail(courseId) {
       this.loading = true;
@@ -256,7 +283,7 @@ export default {
         if (response && response.status === 'success' && response.data) {
           this.courseDetail = response.data;
         } else if (response && response.data) {
-          // 백엔드 응답 구조가 다른 경우
+          // 직접적인 응답 구조가 다른 경우
           this.courseDetail = response.data;
         } else {
           this.courseDetail = null;
@@ -272,7 +299,7 @@ export default {
 
     goNearby() {
       if (!this.selectedCourse || !this.courseDetail?.coords?.length) {
-        alert('코스를 먼저 선택하세요.')
+        alert('코스를 먼저 선택해주세요')
         return
       }
       this.$router.push({

@@ -175,15 +175,7 @@ async function loadDiseaseCourses(pageArg = 1) {
   loading.value = true
   error.value = null
   try {
-    const token = localStorage.getItem('accessToken') || localStorage.getItem('token')
-    let email = ''
-    try {
-      if (token) {
-        const payload = JSON.parse(decodeURIComponent(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')))
-        email = payload.email || payload.username || ''
-      }
-    } catch (_) {}
-    const res = await courseApi.getDiseaseCourses(email, diseaseId.value, currentPage.value - 1, pageSize.value, sortBy.value)
+    const res = await courseApi.getDiseaseCourses(diseaseId.value, currentPage.value - 1, pageSize.value, sortBy.value)
     const body = res?.data || res
     const list = Array.isArray(body) ? body : (body?.items || [])
     courses.value = normalizeCourseData(list)

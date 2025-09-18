@@ -8,6 +8,31 @@
     <div class="write-content">
       <!-- 제목 입력 컴포넌트  -->
       <TitleInput @title-changed="handleTitleChange"/>
+      
+      <!-- 게시판 설정 -->
+      <div class="form-section">
+        <h3>게시판 설정</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="boardType">게시판 타입</label>
+            <select id="boardType" v-model="formData.boardType" class="form-select">
+              <option v-for="option in boardTypeOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group" v-if="formData.boardType === 3">
+            <label for="diseaseId">질병 선택</label>
+            <select id="diseaseId" v-model="formData.diseaseId" class="form-select">
+              <option v-for="option in diseaseOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
       <!-- 이미지 업로드 컴포넌트 -->
       <ImageUpload @image-changed="handleImageChange"/>
       <!-- 내용 입력 컴포넌트 -->
@@ -26,6 +51,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { communityApi } from '@/api/communityApi'
+import { handleApiError, showSuccess } from '@/utils/errorHandler.js'
 import TitleInput from '@/components/TitleInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 import ContentEditor from '@/components/ContentEditor.vue'
@@ -46,11 +72,28 @@ export default {
       title: '',
       content: '',
       notice: false,
-      // 문서 스펙 필드(임시 기본값). 실제 값 연결 시 UI에서 설정하도록 확장 가능
+      // 게시판 타입: 1=일반, 2=공지사항, 3=질병별 추천
       boardType: 1,
       diseaseId: null,
       courseId: null,
     })
+    
+    // 게시판 타입 옵션
+    const boardTypeOptions = ref([
+      { value: 1, label: '일반 게시판' },
+      { value: 2, label: '공지사항' },
+      { value: 3, label: '질병별 추천' }
+    ])
+    
+    // 질병 옵션
+    const diseaseOptions = ref([
+      { value: null, label: '질병을 선택하세요' },
+      { value: 1, label: '고혈압' },
+      { value: 2, label: '당뇨' },
+      { value: 3, label: '허리디스크' },
+      { value: 4, label: '관절염' },
+      { value: 5, label: '고지혈증' }
+    ])
     
     const selectedImages = ref([])
     const isSubmitting = ref(false)
@@ -72,12 +115,12 @@ export default {
         isSubmitting.value = true
       
         if (!formData.value.title.trim()) {
-          alert('제목을 입력해주세요')
+          handleApiError({ message: '제목을 입력해주세요' }, '게시글 작성')
           return
         }
 
         if (!formData.value.content.trim()) {
-          alert('내용을 입력해주세요')
+          handleApiError({ message: '내용을 입력해주세요' }, '게시글 작성')
           return
         }
 
@@ -110,15 +153,14 @@ export default {
         const response = await communityApi.createArticle(formDataToSend)
 
         if (response.status === 'success') {
-          alert('게시글이 성공적으로 등록되었습니다.')
+          showSuccess('게시글이 성공적으로 등록되었습니다.')
           router.push('/community')
         } else {
-          alert('게시글 등록에 실패했습니다.')
+          handleApiError({ message: '게시글 등록에 실패했습니다.' }, '게시글 작성')
         }
 
       } catch (error) {
-        console.error('게시글 등록 중 오류 발생:', error)
-        alert('게시글 등록에 실패했습니다.')
+        handleApiError(error, '게시글 작성')
       } finally {
         isSubmitting.value = false
       }
@@ -132,6 +174,8 @@ export default {
       formData,
       selectedImages,
       isSubmitting,
+      boardTypeOptions,
+      diseaseOptions,
       handleTitleChange,
       handleImageChange,
       handleContentChange,
@@ -173,5 +217,53 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.form-section {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.form-section h3 {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-size: 1.1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.form-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: white;
+  font-size: 14px;
+  color: #495057;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 </style> 

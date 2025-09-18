@@ -187,14 +187,13 @@
           const payload = token ? JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))) : null
           const userEmail = payload?.email || payload?.sub
           const attractionIds = this.selectedAttractions.map(Number)
-          const due = this.selectedDate.toISOString().split('T')[0]
+          const due = this.selectedDate.toISOString()
           const cid = this.course?.courseId ?? this.course?.id
 
 
           await courseApi.registerSchedule(
             cid,
             due,
-            userEmail,
             attractionIds
           )
           this.$emit('schedule-registered')

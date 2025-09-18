@@ -16,7 +16,7 @@
         </div>
         <div class="stat">
           <span class="icon">💬</span>
-          <span class="count">{{ Number(article.commentCount || 0) }}</span>
+          <span class="count">{{ commentCount }}</span>
         </div>
       </div>
     </div>
@@ -37,6 +37,28 @@ export default {
     }
   },
   emits: ['click'],
+  computed: {
+    commentCount() {
+      // 다양한 댓글 갯수 필드 확인
+      const commentCount = this.article.commentCount || 
+                          this.article.comments?.length || 
+                          this.article.comment?.length || 
+                          this.article.replyCount || 
+                          this.article.replies?.length || 
+                          0
+      
+      console.log(`🔍 게시글 ${this.article.id} 댓글 갯수:`, {
+        commentCount: this.article.commentCount,
+        comments: this.article.comments?.length,
+        comment: this.article.comment?.length,
+        replyCount: this.article.replyCount,
+        replies: this.article.replies?.length,
+        최종결과: commentCount
+      })
+      
+      return Number(commentCount)
+    }
+  },
   methods: {
     handleClick() {
       this.$emit('click', this.article)
