@@ -1,20 +1,20 @@
-<template>
+﻿<template>
     <div class="visit-calendar">
-      <h3>방문 계획 캘린더</h3>
+      <h3>諛⑸Ц 怨꾪쉷 罹섎┛??/h3>
       
-      <!-- 캘린더 헤더 -->
+      <!-- 罹섎┛???ㅻ뜑 -->
       <div class="calendar-header">
         <button @click="previousMonth">&lt;</button>
         <h4>{{ currentMonthYear }}</h4>
         <button @click="nextMonth">&gt;</button>
       </div>
       
-      <!-- 요일 헤더 -->
+      <!-- ?붿씪 ?ㅻ뜑 -->
       <div class="calendar-weekdays">
         <div v-for="day in weekdays" :key="day" class="weekday">{{ day }}</div>
       </div>
       
-      <!-- 캘린더 그리드 -->
+      <!-- 罹섎┛??洹몃━??-->
       <div class="calendar-grid">
         <div 
           v-for="date in calendarDates" 
@@ -28,26 +28,25 @@
         >
           <span class="day-number">{{ date.day }}</span>
           <div v-if="date.schedules && date.schedules.length > 0" class="schedule-indicator">
-            {{ date.schedules.length }}개
-          </div>
+            {{ date.schedules.length }}媛?          </div>
         </div>
       </div>
       
-      <!-- 선택된 날짜의 일정 -->
+      <!-- ?좏깮???좎쭨???쇱젙 -->
       <div v-if="selectedDate && selectedDateSchedules.length > 0" class="selected-date-schedules">
-        <h4>{{ formatSelectedDate(selectedDate) }} 방문 예정</h4>
+        <h4>{{ formatSelectedDate(selectedDate) }} 諛⑸Ц ?덉젙</h4>
         <div v-for="schedule in selectedDateSchedules" :key="schedule.id" class="schedule-item">
           <div class="schedule-course">{{ schedule.courseName }}</div>
           <div class="schedule-attractions" v-if="schedule.attractionCount > 0">
-            명소 {{ schedule.attractionCount }}개 방문 예정
+            紐낆냼 {{ schedule.attractionCount }}媛?諛⑸Ц ?덉젙
           </div>
         </div>
       </div>
     </div>
   </template>
   
-  <script>
-  import courseApi from '../api/courseApi.js'
+  <script>import courseApi from '../api/courseApi.js'
+import { getAuthUser } from '@/services/authService.js'
   
   export default {
     name: 'VisitCalendar',
@@ -57,12 +56,12 @@
         selectedDate: null,
         schedules: [],
         loading: false,
-        weekdays: ['일', '월', '화', '수', '목', '금', '토']
+        weekdays: ['??, '??, '??, '??, '紐?, '湲?, '??]
       }
     },
     computed: {
       currentMonthYear() {
-        return `${this.currentDate.getFullYear()}년 ${this.currentDate.getMonth() + 1}월`
+        return `${this.currentDate.getFullYear()}??${this.currentDate.getMonth() + 1}??
       },
       
       calendarDates() {
@@ -115,16 +114,29 @@
       async loadSchedules() {
         this.loading = true
         try {
-          const userEmail = 'test@example.com'
-          
+          const authUser = getAuthUser()
+          const userEmail = authUser?.email || authUser?.sub || ''
+
+          if (!userEmail) {
+            console.warn('로그인 정보를 확인할 수 없어 방문 일정을 불러오지 않습니다.')
+            this.schedules = []
+            return
+          }
+
           const response = await courseApi.getScheduledCourses(userEmail)
-          if (response && response.status === 'success' && response.data && response.data.schedule) {
-            this.schedules = response.data.schedule
+          const body = response?.data || response
+
+          if (body?.status === 'success' && body?.data?.schedule) {
+            this.schedules = body.data.schedule
+          } else if (Array.isArray(body?.schedule)) {
+            this.schedules = body.schedule
+          } else if (Array.isArray(body)) {
+            this.schedules = body
           } else {
             this.schedules = []
           }
         } catch (error) {
-          console.error('방문 예정 로드 실패:', error)
+          console.error('방문 일정 로드 실패:', error)
           this.schedules = []
         } finally {
           this.loading = false
@@ -146,7 +158,7 @@
       },
       
       formatSelectedDate(date) {
-        return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`
+        return `${date.getFullYear()}??${date.getMonth() + 1}??${date.getDate()}??
       }
     }
   }
@@ -263,3 +275,10 @@
     color: #666;
   }
   </style>
+
+
+
+
+
+
+

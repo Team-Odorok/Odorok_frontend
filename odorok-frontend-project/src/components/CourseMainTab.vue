@@ -1,8 +1,8 @@
-<template>
+﻿<template>
   <div class="main-tab-page">
     <h2>추천코스 리스트</h2>
     
-    <!-- 메인 TOP 섹션: 별점/방문/리뷰 상위 5개 (카드형, 클릭 시 디테일 포커스) -->
+    <!-- 메인 TOP 섹션: 별점/리뷰 상위 5개 (카드형, 클릭 시 디테일 포커스) -->
     <section class="card top3wrap" style="margin: 12px 0;">
       <div class="top3grid">
         <div class="topcol">
@@ -12,16 +12,6 @@
               <span class="rank">{{ idx+1 }}</span>
               <span class="name" :title="c.courseName || c.gilName">{{ c.courseName || c.gilName }}</span>
               <span class="metric">⭐ {{ c.avgStars }}</span>
-            </li>
-          </ul>
-        </div>
-        <div class="topcol">
-          <div class="tophead">방문 TOP 5</div>
-          <ul class="toplist">
-            <li v-for="(c,idx) in topVisited" :key="`v-`+ (c.courseId||c.id||idx)" class="toprow" @click="selectTopCourse(c)">
-              <span class="rank">{{ idx+1 }}</span>
-              <span class="name" :title="c.courseName || c.gilName">{{ c.courseName || c.gilName }}</span>
-              <span class="metric">👣 {{ c.visitationCount }}</span>
             </li>
           </ul>
         </div>
@@ -43,26 +33,8 @@
       <p>코스 상세 정보를 불러오는 중...</p>
     </div>
     
-    <!-- 2열 레이아웃: 좌 리스트 / 우 디테일 -->
-    <div class="two-col">
-      <aside class="list-pane card">
-        <ul v-if="pagedCourses.length > 0" class="list" style="list-style: none; padding: 0; margin: 0;">
-          <li v-for="course in pagedCourses" :key="course.id" @click="selectCourse(course)" class="course-item row"
-              :class="{ 'selected': selectedCourse && selectedCourse.id === course.id }">
-            <div class="col name">{{ course.name }} <span class="muted">({{ course.distance }}km)</span></div>
-            <div class="col tags">
-              <span class="chip level">난이도: {{ course.difficulty }}</span>
-              <span class="chip rating">⭐ {{ course.rating }}</span>
-            </div>
-          </li>
-        </ul>
-        <div v-else class="state">코스 데이터가 없습니다.</div>
-        <div v-if="totalPages > 1" class="pager">
-          <button class="btn" @click="prevPage" :disabled="currentPage === 1">이전</button>
-          <span class="cnt">{{ currentPage }} / {{ totalPages }}</span>
-          <button class="btn" @click="nextPage" :disabled="currentPage === totalPages">다음</button>
-        </div>
-      </aside>
+    <!-- 디테일 섹션 -->
+    <div class="detail-section">
       <section class="detail-host">
         <div v-if="selectedCourse" class="detail-section">
           <div class="detail-header card">
@@ -76,7 +48,11 @@
             <div class="actions">
               <button class="btn outline" @click="goNearby">주변 명소 보기</button>
               <button class="btn success" @click="showScheduleModal = true">방문 예정 등록</button>
+              <button class="btn" @click="handleStartCourse" :disabled="startingCourse || !selectedCourse">코스 시작</button>
+              <button class="btn" @click="handleEndCourse" :disabled="endingCourse || !selectedCourse">코스 종료</button>
+              <button class="btn" @click="fetchCourseDistance" :disabled="distanceLoading || !selectedCourse">거리 확인</button>
             </div>
+            <p v-if="actionMessage" class="action-message">{{ actionMessage }}</p>
           </div>
 
           <!-- 핵심 정보 요약 -->
@@ -101,10 +77,10 @@
 
           <!-- 주변 명소 버튼 -->
           <div v-if="$parent.selected === 'all'" style="display: flex; gap: 16px; margin: 24px 0 0 0; width: 100%; justify-content: flex-start;">
-            <button @click="fetchAttractions" 
+            <button @click="fetchAttractions"
                     :disabled="loadingAttractions"
                     style="padding:8px 18px; background:#447cff; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:1.1rem;">
-              {{ loadingAttractions ? '명소 불러오는 중...' : '주변 명소 보기 (2km 이내)' }}
+              {{ loadingAttractions ? '명소를 불러오는 중...' : '주변 명소 보기 (2km 이내)' }}
             </button>
           </div>
 
@@ -112,18 +88,18 @@
           <div v-if="attractions.length > 0" style="width: 100%;">
             <h3>주변 명소 ({{ attractions.length }}개)</h3>
             <ul style="list-style: none; padding: 0; max-height: 200px; overflow-y: auto;">
-              <li v-for="attraction in attractions" :key="attraction.attractionId" 
+              <li v-for="attraction in attractions" :key="attraction.attractionId"
                   style="padding: 8px; margin-bottom: 4px; border: 1px solid #eee; border-radius: 4px;">
                 <strong>{{ attraction.title }}</strong>
                 <div style="font-size: 12px; color: #666;">{{ attraction.addr1 }}</div>
-                <div v-if="attraction.tel" style="font-size: 12px; color: #007bff;">📞 {{ attraction.tel }}</div>
+                <div v-if="attraction.tel" style="font-size: 12px; color: #007bff;">☎ {{ attraction.tel }}</div>
               </li>
             </ul>
           </div>
 
-          <!-- 지도/설명 2열 -->
+          <!-- 디테일 탭 -->
           <div class="tabbar">
-            <button class="tab" :class="{active: detailTab==='info'}" @click="detailTab='info'">정보</button>
+            <button class="tab" :class="{active: detailTab==='info'}" @click="detailTab='info'">기본 정보</button>
             <button class="tab" :class="{active: detailTab==='review'}" @click="detailTab='review'">리뷰</button>
           </div>
 
@@ -140,18 +116,19 @@
             </div>
           </div>
 
-          <!-- 코스 리뷰 컴포넌트 -->
+          <!-- 리뷰 컴포넌트 -->
           <div v-show="detailTab==='review'" class="review card">
             <CourseReviewComponent v-if="selectedCourse" :courseId="selectedCourse.id" />
           </div>
-          <ScheduleRegistrationModal 
+
+          <ScheduleRegistrationModal
             :visible="showScheduleModal"
             :course="selectedCourse"
             @close="showScheduleModal = false"
             @schedule-registered="handleScheduleRegistered"
           />
         </div>
-        <div v-else class="empty card state">왼쪽에서 코스를 선택하세요.</div>
+        <div v-else class="empty card state">위의 TOP 코스에서 코스를 선택해 주세요.</div>
       </section>
     </div>
   </div>
@@ -165,10 +142,10 @@ import ScheduleRegistrationModal from './ScheduleRegistrationModal.vue'
 
 export default {
   name: 'CourseMainTab',
-  components: { 
-    KakaoMap, 
-    CourseReviewComponent, 
-    ScheduleRegistrationModal 
+  components: {
+    KakaoMap,
+    CourseReviewComponent,
+    ScheduleRegistrationModal
   },
   props: {
     coursesProp: {
@@ -181,33 +158,23 @@ export default {
       selectedCourse: null,
       courseDetail: null,
       attractions: [],
-      currentPage: 1,
-      pageSize: 5,
       loading: false,
       loadingAttractions: false,
-      showScheduleModal: false, // 예정 등록 모달 표시 여부
+      showScheduleModal: false,
       detailTab: 'info',
-      // 메인 TOP 섹션 데이터
       topStars: [],
-      topVisited: [],
-      topReviewCount: []
+      topReviewCount: [],
+      startingCourse: false,
+      endingCourse: false,
+      distanceLoading: false,
+      distanceInfo: null,
+      actionMessage: ''
     }
   },
   computed: {
-    sortedByDistance() {
-      let sorted = [...this.coursesProp];
-      return sorted.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-    },
-    pagedCourses() {
-      const start = (this.currentPage - 1) * this.pageSize;
-      return this.sortedByDistance.slice(start, start + this.pageSize);
-    },
-    totalPages() {
-      return Math.ceil(this.sortedByDistance.length / this.pageSize)
-    },
     attractionsWithEndPoint() {
-      if (!this.courseDetail || !this.courseDetail.coords || this.courseDetail.coords.length === 0) return this.attractions;
-      const endCoord = this.courseDetail.coords[this.courseDetail.coords.length - 1];
+      if (!this.courseDetail || !this.courseDetail.coords || this.courseDetail.coords.length === 0) return this.attractions
+      const endCoord = this.courseDetail.coords[this.courseDetail.coords.length - 1]
       return [
         ...this.attractions,
         {
@@ -217,152 +184,157 @@ export default {
           longitude: endCoord.longitude,
           isEndPoint: true
         }
-      ];
+      ]
     }
-  },
-  watch: {
-    selectedCourse(newCourse) {
-      if (newCourse && newCourse.id) {
-        this.fetchCourseDetail(newCourse.id);
-      } else {
-        this.courseDetail = null;
-        this.attractions = [];
-      }
-    }
-  },
-  created() {
-    this.fetchTop()
   },
   methods: {
     async fetchTop() {
       try {
-        // 이메일(optional) 토큰에서 획득
-        const token = localStorage.getItem('accessToken') || localStorage.getItem('token')
-        let email = ''
-        try {
-          if (token) {
-            const payload = JSON.parse(decodeURIComponent(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')))
-            email = payload.email || payload.username || ''
-          }
-        } catch (_) {}
-        const res = await courseApi.getTopCourses(email)
+        const res = await courseApi.getTopCourses()
         const body = res?.data || res
         this.topStars = body?.topStars || []
-        this.topVisited = body?.topVisited || []
         this.topReviewCount = body?.topReviewCount || []
-      } catch (e) {
-        console.error('메인 TOP 섹션 로드 실패:', e)
+      } catch (error) {
+        console.error('메인 TOP 섹션 로드 실패:', error)
         this.topStars = []
-        this.topVisited = []
         this.topReviewCount = []
-      }
-    },
-    selectCourse(course) {
-      this.selectedCourse = course;
-    },
-    prevPage() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
       }
     },
     selectTopCourse(raw) {
       const id = raw.courseId || raw.courseIdx || raw.id
       const name = raw.courseName || raw.gilName || raw.name
       if (!id) return
-      // 리스트에서 같은 id 찾아 선택
-      const found = this.pagedCourses.find(c => (c.courseId||c.id) === id) || { id, name }
       this.selectedCourse = {
-        id: found.id || id,
-        name: found.name || name,
-        distance: found.distance || raw.distance || 0,
-        difficulty: found.difficulty || raw.level || '보통',
-        reqTime: found.reqTime || raw.reqTime || '정보없음',
-        rating: found.rating || raw.avgStars || 0
+        id: id,
+        name: name,
+        distance: raw.distance || 0,
+        difficulty: raw.level || '보통',
+        reqTime: raw.reqTime || '정보없음',
+        rating: raw.avgStars || 0
       }
       this.detailTab = 'info'
       this.fetchCourseDetail(this.selectedCourse.id)
-      // 디테일 영역으로 스크롤
       requestAnimationFrame(() => {
         const host = document.querySelector('.detail-host')
         if (host) host.scrollIntoView({ behavior: 'smooth', block: 'start' })
       })
     },
-    nextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
-      }
-    },
-    goNearby() {
-      if (!this.selectedCourse || !this.courseDetail?.coords?.length) {
-        alert('코스를 먼저 선택하세요.')
-        return
-      }
-      this.$router.push({
-        path: '/nearby-attractions',
-        query: {
-          courseId: this.selectedCourse.id,
-          courseName: this.selectedCourse.name,
-          sidoCode: this.selectedCourse.sidoCode || 1,
-          sigunguCode: this.selectedCourse.sigunguCode || 1,
-          coords: JSON.stringify(this.courseDetail.coords) // 지도 경로 전달
-        }
-      })
-    },
     async fetchCourseDetail(courseId) {
-      this.loading = true;
+      if (!courseId) return
+      this.loading = true
       try {
-        const response = await courseApi.getCourseDetail(courseId);
+        const response = await courseApi.getCourseDetail(courseId)
         if (response && response.status === 'success' && response.data) {
-          this.courseDetail = response.data;
+          this.courseDetail = response.data
         } else if (response && response.data) {
-          // 백엔드 응답 구조가 다른 경우
-          this.courseDetail = response.data;
+          this.courseDetail = response.data
         } else {
-          this.courseDetail = null;
+          this.courseDetail = null
         }
       } catch (error) {
-        console.error('코스 상세 정보 조회 실패:', error);
-        this.courseDetail = null;
+        console.error('코스 상세 정보 조회 실패:', error)
+        this.courseDetail = null
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
     async fetchAttractions() {
-      if (!this.selectedCourse) return;
-      
-      this.loadingAttractions = true;
+      if (!this.selectedCourse) return
+      this.loadingAttractions = true
       try {
-        const params = {
-          sidoCode: this.selectedCourse.sidoCode || 1,
-          sigunguCode: this.selectedCourse.sigunguCode || 1,
-          contentTypeId: this.selectedCourse.contentTypeId || 21
-        };
+        const courseId = this.selectedCourse.id || this.selectedCourse.courseId
+        const contentTypeId = this.selectedCourse.contentTypeId || 12
         
         const response = await courseApi.getNearbyAttractions(
-          params.sidoCode, 
-          params.sigunguCode, 
-          params.contentTypeId
-        );
-        
+          courseId,
+          contentTypeId
+        )
         if (response && response.status === 'success' && response.data && response.data.items) {
-          this.attractions = response.data.items;
+          this.attractions = response.data.items
         } else if (response && response.data && Array.isArray(response.data)) {
-          this.attractions = response.data;
+          this.attractions = response.data
         } else {
-          this.attractions = [];
+          this.attractions = []
         }
       } catch (error) {
-        console.error('주변 명소 조회 실패:', error);
-        this.attractions = [];
+        console.error('주변 명소 조회 실패:', error)
+        this.attractions = []
       } finally {
-        this.loadingAttractions = false;
+        this.loadingAttractions = false
       }
     },
-    
+    async handleStartCourse() {
+      if (!this.selectedCourse || this.startingCourse) return
+      const courseId = this.selectedCourse.id || this.selectedCourse.courseId
+      if (!courseId) {
+        this.actionMessage = '코스 정보가 없어 시작할 수 없습니다.'
+        return
+      }
+      this.startingCourse = true
+      this.actionMessage = ''
+      try {
+        await courseApi.startCourse(courseId)
+        this.actionMessage = '코스 시작 요청을 완료했습니다.'
+      } catch (error) {
+        console.error('코스 시작 실패:', error)
+        this.actionMessage = '코스 시작에 실패했습니다. 잠시 후 다시 시도해 주세요.'
+      } finally {
+        this.startingCourse = false
+      }
+    },
+    async handleEndCourse() {
+      if (!this.selectedCourse || this.endingCourse) return
+      const courseId = this.selectedCourse.id || this.selectedCourse.courseId
+      if (!courseId) {
+        this.actionMessage = '코스 정보가 없어 종료할 수 없습니다.'
+        return
+      }
+      this.endingCourse = true
+      this.actionMessage = ''
+      try {
+        await courseApi.endCourse(courseId)
+        this.actionMessage = '코스 종료 요청을 완료했습니다.'
+      } catch (error) {
+        console.error('코스 종료 실패:', error)
+        this.actionMessage = '코스 종료에 실패했습니다. 잠시 후 다시 시도해 주세요.'
+      } finally {
+        this.endingCourse = false
+      }
+    },
+    async fetchCourseDistance() {
+      if (!this.selectedCourse || this.distanceLoading) return
+      const courseId = this.selectedCourse.id || this.selectedCourse.courseId
+      if (!courseId) {
+        this.actionMessage = '코스 정보가 없어 거리를 확인할 수 없습니다.'
+        return
+      }
+      this.distanceLoading = true
+      this.actionMessage = ''
+      try {
+        const response = await courseApi.getCourseDistance(courseId)
+        const body = response?.data || response
+        const distanceValue = body?.distance ?? body?.data?.distance ?? body
+        if (typeof distanceValue === 'number') {
+          this.actionMessage = `현재 이동 거리: ${distanceValue.toLocaleString()}m`
+        } else if (distanceValue?.message) {
+          this.actionMessage = distanceValue.message
+        } else {
+          this.actionMessage = '거리를 확인했습니다.'
+        }
+        this.distanceInfo = distanceValue
+      } catch (error) {
+        console.error('코스 거리 확인 실패:', error)
+        this.actionMessage = '거리를 확인하는 중 문제가 발생했습니다.'
+      } finally {
+        this.distanceLoading = false
+      }
+    },
     handleScheduleRegistered() {
       console.log('방문 예정이 등록되었습니다.')
-      // 여기에 추가 로직을 넣을 수 있습니다
     }
+  },
+  mounted() {
+    this.fetchTop()
   }
 }
 </script>
@@ -395,6 +367,7 @@ export default {
 .detail-header .title { font-size: 22px; font-weight: 800; }
 .detail-header .meta { display:flex; gap: 8px; flex-wrap: wrap; }
 .actions { display:flex; gap: 8px; flex-wrap: wrap; }
+.action-message { margin-top: 6px; color: #1d4ed8; font-size: 0.95rem; font-weight: 600; }
 .btn { padding:8px 12px; border:1px solid #dee2e6; background:#fff; border-radius:6px; cursor:pointer; }
 .btn.outline { background:#fff; }
 .btn.success { background:#f6fff9; border-color:#d1f1de; }
@@ -426,14 +399,29 @@ export default {
 .section-title { margin:0 0 8px 0; font-size:14px; color:#666; }
 
 /* TOP3 카드 */
-.top3grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.tophead { font-weight:800; margin-bottom:6px; }
-.toplist { list-style:none; padding:0; margin:0; }
-.toprow { display:grid; grid-template-columns: 30px 1fr auto; align-items:center; height: 36px; border-bottom:1px solid #eee; cursor:pointer; }
+.top3grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-items: start; }
+.topcol { display: flex; flex-direction: column; }
+.tophead { font-weight:800; margin-bottom:6px; padding-bottom: 8px; border-bottom: 2px solid #e9ecef; }
+.toplist { list-style:none; padding:0; margin:0; flex: 1; }
+.toprow { 
+  display:grid; 
+  grid-template-columns: 30px 1fr auto; 
+  align-items:center; 
+  min-height: 40px; 
+  padding: 8px 0;
+  border-bottom:1px solid #eee; 
+  cursor:pointer; 
+}
 .toprow:hover { background:#f8f9fa; }
-.toprow .rank { font-weight:800; color:#999; text-align:center; }
-.toprow .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.toprow .metric { color:#555; font-weight:700; }
+.toprow .rank { font-weight:800; color:#999; text-align:center; font-size: 14px; }
+.toprow .name { 
+  overflow:hidden; 
+  text-overflow:ellipsis; 
+  white-space:nowrap; 
+  font-size: 13px;
+  line-height: 1.4;
+}
+.toprow .metric { color:#555; font-weight:700; font-size: 12px; }
 .tabbar { display:flex; gap:8px; margin:8px 0; }
 .tab { padding: 6px 10px; border:1px solid #e1e8ed; background:#fff; border-radius:999px; cursor:pointer; font-size:12px; }
 .tab.active { background:#eef7ff; border-color:#cfe7ff; color:#1d4ed8; }
@@ -452,4 +440,4 @@ button:disabled {
   background: #6c757d !important;
   cursor: not-allowed;
 }
-</style> 
+</style>

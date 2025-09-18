@@ -23,6 +23,7 @@
             :showAttractionMarkers="true"
             :highlightAttractionId="selectedAttraction && (selectedAttraction.attractionId || selectedAttraction.attrationId)"
             :height="560"
+            @attraction-selected="onAttractionSelected"
           />
         </div>
       </div>
@@ -93,6 +94,17 @@
             <h4>상세 설명</h4>
             <p>{{ attractionDetail.overview }}</p>
           </div>
+
+          <!-- 명소 등록 버튼 -->
+          <div class="detail-item">
+            <button 
+              @click="registerAttraction" 
+              class="register-btn"
+              :disabled="registering"
+            >
+              {{ registering ? '등록 중...' : '이 명소를 방문 예정으로 등록' }}
+            </button>
+          </div>
         </div>
 
         <!-- 명소 목록 -->
@@ -145,8 +157,8 @@ export default {
     const route = useRoute()
     const router = useRouter()
     
-    const courseId = ref(route.params.courseId)
-    const courseName = ref(route.params.courseName || '선택된 코스')
+    const courseId = ref(route.query.courseId || route.params.courseId)
+    const courseName = ref(route.query.courseName || route.params.courseName || '선택된 코스')
     const courseCoords = ref([])
     const attractions = ref([])
     const contentTypes = ref([])
@@ -155,6 +167,7 @@ export default {
     const attractionDetail = ref(null)
     const loading = ref(false)
     const error = ref(null)
+    const registering = ref(false)
 
     // URL 쿼리에서 데이터 파싱
     const parseQueryData = () => {
@@ -187,10 +200,7 @@ export default {
       error.value = null
       
       try {
-        const sidoCode = parseInt(route.query.sidoCode) || 1
-        const sigunguCode = parseInt(route.query.sigunguCode) || 1
-        
-        console.log('주변명소 조회 파라미터:', { sidoCode, sigunguCode })
+        console.log('주변명소 조회 파라미터:', { courseId: courseId.value })
         
         // 여러 컨텐츠 타입을 한번에 조회
         const contentTypeIds = [12, 14, 15, 25, 28, 32, 38, 39] // 관광지, 문화시설, 축제공연행사, 여행코스, 레포츠, 숙박, 쇼핑, 음식점
@@ -198,7 +208,7 @@ export default {
         
         for (const contentTypeId of contentTypeIds) {
           try {
-            const response = await courseApi.getNearbyAttractions(sidoCode, sigunguCode, contentTypeId)
+            const response = await courseApi.getNearbyAttractions(courseId.value, contentTypeId)
             console.log(`컨텐츠 타입 ${contentTypeId} 응답:`, response)
             
             if (response && response.status === 'success' && response.data && response.data.items) {
@@ -293,12 +303,72 @@ export default {
       }
     }
 
+    // 지도에서 명소 클릭 시 호출
+    const onAttractionSelected = async (attraction) => {
+      console.log('지도에서 명소 선택됨:', attraction)
+      await selectAttraction(attraction)
+    }
+
     // 컨텐츠 타입 선택
     const selectContentType = (contentTypeId) => {
       selectedContentType.value = contentTypeId
       selectedAttraction.value = null
       attractionDetail.value = null
       // API 재호출 제거 - computed로 필터링만 처리
+    }
+
+    // 명소 방문 예정 등록
+    const registerAttraction = async () => {
+      if (!selectedAttraction.value) {
+        alert('등록할 명소를 선택해주세요.')
+        return
+      }
+
+      registering.value = true
+      try {
+        // 현재 날짜를 기본값으로 설정
+        const dueDate = new Date()
+        dueDate.setDate(dueDate.getDate() + 7) // 일주일 후로 설정
+        
+        // 명소 ID 추출 (여러 가능한 필드명 확인)
+        const attractionId = selectedAttraction.value.attractionId || 
+                           selectedAttraction.value.attrationId || 
+                           selectedAttraction.value.contentId ||
+                           selectedAttraction.value.id
+        
+        console.log('🔍 선택된 명소:', selectedAttraction.value)
+        console.log('🔍 추출된 명소 ID:', attractionId)
+        console.log('🔍 코스 ID:', courseId.value)
+        
+        if (!attractionId || attractionId === 0) {
+          alert('명소 ID를 찾을 수 없습니다. 명소 정보를 확인해주세요.')
+          console.error('명소 ID 추출 실패:', selectedAttraction.value)
+          return
+        }
+
+        if (!courseId.value || courseId.value === 0) {
+          alert('코스 ID를 찾을 수 없습니다. 코스 정보를 확인해주세요.')
+          console.error('코스 ID 추출 실패:', courseId.value)
+          return
+        }
+
+        // 스케줄 등록 (명소만 등록)
+        await courseApi.registerSchedule(
+          Number(courseId.value),
+          dueDate.toISOString(),
+          [Number(attractionId)]
+        )
+        
+        alert('명소가 방문 예정으로 등록되었습니다!')
+        
+        // 등록 성공 후 선택된 명소 유지 (페이지에 남아있도록)
+        // selectedAttraction은 그대로 유지됨
+      } catch (error) {
+        console.error('명소 등록 실패:', error)
+        alert('명소 등록에 실패했습니다.')
+      } finally {
+        registering.value = false
+      }
     }
 
     // 뒤로 가기
@@ -324,9 +394,12 @@ export default {
       filteredAttractions,
       loading,
       error,
+      registering,
       getContentTypeName,
       selectAttraction,
+      onAttractionSelected,
       selectContentType,
+      registerAttraction,
       goBack
     }
   }
@@ -346,6 +419,10 @@ export default {
   padding: 20px;
   width: 100%;
   border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .header-component h1 {
@@ -360,6 +437,8 @@ export default {
 
 .navigation-component {
   margin-top: 12px;
+  display: flex;
+  justify-content: center;
 }
 
 .back-button {
@@ -617,5 +696,31 @@ export default {
     min-width: auto;
     height: auto;
   }
+}
+
+/* 명소 등록 버튼 스타일 */
+.register-btn {
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.register-btn:hover:not(:disabled) {
+  background: #1e40af;
+  transform: translateY(-1px);
+}
+
+.register-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
 }
 </style> 

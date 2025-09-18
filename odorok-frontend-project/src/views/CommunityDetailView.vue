@@ -11,15 +11,15 @@
       <button @click="fetchArticle" class="retry-button">다시 시도</button>
     </div>
     
-    <!-- 게시글 내용 -->
+    <!-- 게시글 상세 -->
     <div v-else-if="article" class="article-detail">
       <!-- 게시글 헤더 -->
       <div class="article-header">
         <h1>{{ article.title }}</h1>
         <div class="article-meta">
-          <span class="author">작성자: {{ article.nickname }}</span>
+          <span class="author">작성자 {{ article.nickname }}</span>
           <span class="date">{{ formatDate(article.createdAt) }}</span>
-          <span class="views">조회수: {{ article.viewCount }}</span>
+          <span class="views">조회수 {{ article.viewCount }}</span>
         </div>
       </div>
       
@@ -30,8 +30,8 @@
       
       <!-- 게시글 액션 -->
       <div class="article-actions">
-        <button @click="toggleLike" :disabled="liking || isLiked" :class="{ liked: isLiked }">
-          ❤️ {{ article.likeCount }}
+        <button @click="toggleLike" :disabled="liking" :class="{ liked: isLiked }">
+          {{ likeButtonLabel }} {{ articleLikeCount }}
         </button>
         <button @click="goBack" class="back-button">목록으로</button>
       </div>
@@ -44,7 +44,7 @@
         <div class="comment-form">
           <textarea 
             v-model="newComment"
-            placeholder="댓글을 입력하세요"
+            placeholder="댓글을 입력해주세요"
             rows="3"
           ></textarea>
           <button @click="submitComment" :disabled="!newComment.trim()">
@@ -64,7 +64,7 @@
               </div>
             </div>
             
-            <!-- 댓글 내용 (수정 모드가 아닐 때) -->
+            <!-- 댓글 내용 (수정 모드가 아닌 경우) -->
             <div v-if="!comment.isEditing" class="comment-content">
               {{ comment.content }}
             </div>
@@ -74,7 +74,7 @@
               <textarea 
                 v-model="comment.editContent" 
                 rows="2"
-                placeholder="댓글을 수정하세요"
+                placeholder="댓글을 수정해주세요"
               ></textarea>
               <div class="edit-actions">
                 <button @click="saveEditComment(comment)" :disabled="!comment.editContent.trim()">
@@ -90,8 +90,8 @@
   </div>
 </template>
 
- <script>
-import { ref, onMounted } from 'vue'
+<script>
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { communityApi } from '@/api/communityApi'
 
@@ -101,16 +101,19 @@ export default {
     const router = useRouter()
     const route = useRoute()
     
-    // 데이터
     const article = ref(null)
+    const comments = ref([])
     const loading = ref(false)
     const error = ref(null)
-    const isLiked = ref(false)
     const liking = ref(false)
-    
-    // 게시글 ID 가져오기
-    const articleId = route.params.id
-    const localLikedKey = `article_liked_${articleId}`
+    const isLiked = ref(false)
+    const newComment = ref('')
+    const likeButtonLabel = computed(() => (isLiked.value ? '좋아요 취소' : '좋아요'))
+    const articleLikeCount = computed(() => Number(article.value?.likeCount ?? 0))
+
+    const getArticleId = () => {
+      return article.value?.id ?? article.value?.articleId ?? article.value?.articleIdx ?? route.params.id
+    }
     
     // 게시글 조회
     const fetchArticle = async () => {
@@ -118,22 +121,42 @@ export default {
       error.value = null
       
       try {
+        const articleId = route.params.id
         const response = await communityApi.getArticle(articleId)
-        // API가 data만 반환하는 형태까지 허용
-        article.value = response?.data || response || null
-        if (!article.value) {
-          error.value = '게시글을 불러오는데 실패했습니다.'
-        } else {
-          // 서버가 liked 여부를 내려줄 경우 동기화
-          if (Object.prototype.hasOwnProperty.call(article.value, 'liked')) {
-            isLiked.value = !!article.value.liked
+        
+        if (response && response.status === 'success') {
+          const payload = response.data ?? response.article ?? response
+
+          article.value = payload
+          
+          // 좋아요 상태를 더 확실하게 확인
+          const serverLiked = payload?.isLiked ?? 
+                             payload?.liked ?? 
+                             payload?.isLikedByUser ?? 
+                             payload?.userLiked ?? 
+                             false
+          
+          // localStorage에서 저장된 좋아요 상태도 확인
+          const articleId = route.params.id
+          const savedLiked = localStorage.getItem(`article_${articleId}_liked`)
+          const localLiked = savedLiked ? savedLiked === 'true' : null
+          
+          // 서버 상태를 우선하되, 서버에서 정보가 없으면 localStorage 사용
+          isLiked.value = serverLiked || (localLiked !== null ? localLiked : false)
+          
+          console.log('🔍 좋아요 상태 확인:', {
+            서버상태: serverLiked,
+            로컬저장: localLiked,
+            최종결과: isLiked.value,
+            articleId: articleId
+          })
+
+          if (article.value) {
+            const normalized = Number(article.value.likeCount ?? article.value.likes ?? 0)
+            article.value.likeCount = Number.isFinite(normalized) ? normalized : 0
           }
-          // 서버가 liked를 주지 않더라도, 로컬 잠금이 있으면 막기
-          try {
-            if (localStorage.getItem(localLikedKey) === '1') {
-              isLiked.value = true
-            }
-          } catch (_) {}
+        } else {
+          error.value = '게시글을 불러올 수 없습니다.'
         }
       } catch (err) {
         console.error('게시글 조회 실패:', err)
@@ -143,112 +166,210 @@ export default {
       }
     }
     
-    // 날짜 포맷팅
-    const formatDate = (dateString) => {
-      const date = new Date(dateString)
-      return date.toLocaleDateString('ko-KR')
+    // 댓글 조회
+    const fetchComments = async () => {
+      try {
+        const articleId = route.params.id
+        const response = await communityApi.getComments(articleId)
+        
+        if (response && response.status === 'success') {
+          comments.value = response.data.map(comment => ({
+            ...comment,
+            isEditing: false,
+            editContent: comment.content
+          }))
+        }
+      } catch (err) {
+        console.error('댓글 조회 실패:', err)
+      }
     }
     
     // 좋아요 토글
     const toggleLike = async () => {
-      if (liking.value || isLiked.value) return
+      if (liking.value) return
+      
       liking.value = true
       try {
-        await communityApi.toggleLike(articleId)
-        // 서버 값을 신뢰하도록 재조회
-        await fetchArticle()
-        if (!isLiked.value) {
-          isLiked.value = true
+        const articleId = getArticleId()
+        console.log('🔍 좋아요 상태 디버깅:', {
+          articleId: articleId,
+          isLiked: isLiked.value,
+          isLikedType: typeof isLiked.value,
+          article: article.value,
+          articleLiked: article.value?.isLiked,
+          articleLikedType: typeof article.value?.isLiked
+        })
+        
+        let response
+        if (isLiked.value === true) {
+          // 현재 좋아요 상태이면 취소
+          console.log('👎 좋아요 취소 API 호출')
+          
+          // 임시로 직접 fetch 호출
+          const token = localStorage.getItem('accessToken')
+          const fetchResponse = await fetch(`https://odorok.duckdns.org/api/articles/${articleId}/unlikes`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({})
+          })
+          
+          if (fetchResponse.ok) {
+            response = await fetchResponse.json()
+            console.log('👎 좋아요 취소 응답:', response)
+          } else {
+            throw new Error(`좋아요 취소 실패: ${fetchResponse.status}`)
+          }
+        } else {
+          // 현재 좋아요 안한 상태이면 추가
+          console.log('👍 좋아요 추가 API 호출')
+          
+          // 임시로 직접 fetch 호출
+          const token = localStorage.getItem('accessToken')
+          const fetchResponse = await fetch(`https://odorok.duckdns.org/api/articles/${articleId}/likes`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({})
+          })
+          
+          if (fetchResponse.ok) {
+            response = await fetchResponse.json()
+            console.log('👍 좋아요 추가 응답:', response)
+          } else {
+            throw new Error(`좋아요 추가 실패: ${fetchResponse.status}`)
+          }
         }
-        try { localStorage.setItem(localLikedKey, '1') } catch (_) {}
-      } catch (error) {
-        console.error('좋아요 토글 실패:', error)
+        
+        if (response && response.status === 'success') {
+          // 좋아요 상태 토글
+          const previousLiked = isLiked.value
+          isLiked.value = !isLiked.value
+          
+          // 좋아요 수 계산 (이전 상태와 현재 상태를 비교)
+          if (article.value) {
+            const currentCount = Number(article.value.likeCount) || 0
+            if (previousLiked && !isLiked.value) {
+              // 좋아요 취소: -1
+              article.value.likeCount = Math.max(0, currentCount - 1)
+            } else if (!previousLiked && isLiked.value) {
+              // 좋아요 추가: +1
+              article.value.likeCount = currentCount + 1
+            }
+            console.log('👍 좋아요 수 업데이트:', {
+              이전상태: previousLiked,
+              현재상태: isLiked.value,
+              이전개수: currentCount,
+              현재개수: article.value.likeCount
+            })
+          }
+          
+          // 좋아요 상태를 localStorage에 저장하여 페이지 새로고침 시에도 유지
+          const likeKey = `article_${articleId}_liked`
+          localStorage.setItem(likeKey, isLiked.value.toString())
+          console.log('💾 좋아요 상태 저장:', likeKey, isLiked.value)
+        }
+      } catch (err) {
+        console.error('좋아요 처리 실패:', err)
+        alert('좋아요 처리에 실패했습니다.')
       } finally {
         liking.value = false
       }
+    }
+    
+    // 댓글 작성
+    const submitComment = async () => {
+      if (!newComment.value.trim()) return
+      
+      try {
+        const articleId = getArticleId()
+        const response = await communityApi.createComment(articleId, {
+          content: newComment.value.trim()
+        })
+        
+        if (response && response.status === 'success') {
+          newComment.value = ''
+          // 댓글 목록만 새로고침 (댓글 수는 댓글 목록 길이로 계산)
+          await fetchComments()
+        }
+      } catch (err) {
+        console.error('댓글 작성 실패:', err)
+        alert('댓글 작성에 실패했습니다.')
+      }
+    }
+    
+    // 댓글 수정 시작
+    const startEditComment = (comment) => {
+      comment.isEditing = true
+      comment.editContent = comment.content
+    }
+    
+    // 댓글 수정 취소
+    const cancelEditComment = (comment) => {
+      comment.isEditing = false
+      comment.editContent = comment.content
+    }
+    
+    // 댓글 수정 저장
+    const saveEditComment = async (comment) => {
+      if (!comment.editContent.trim()) return
+      
+      try {
+        const response = await communityApi.updateComment(comment.id, {
+          content: comment.editContent.trim()
+        })
+        
+        if (response && response.status === 'success') {
+          comment.content = comment.editContent.trim()
+          comment.isEditing = false
+        }
+      } catch (err) {
+        console.error('댓글 수정 실패:', err)
+        alert('댓글 수정에 실패했습니다.')
+      }
+    }
+    
+    // 댓글 삭제
+    const deleteComment = async (commentId) => {
+      if (!confirm('댓글을 삭제하시겠습니까?')) return
+      
+      try {
+        const response = await communityApi.deleteComment(commentId)
+        
+        if (response && response.status === 'success') {
+          comments.value = comments.value.filter(comment => comment.id !== commentId)
+        }
+      } catch (err) {
+        console.error('댓글 삭제 실패:', err)
+        alert('댓글 삭제에 실패했습니다.')
+      }
+    }
+    
+    // 날짜 포맷팅
+    const formatDate = (dateString) => {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     }
     
     // 뒤로가기
     const goBack = () => {
       router.push('/community')
     }
-
-    const comments = ref([])
-    const newComment = ref('')
-
-    const fetchComments = async () => {
-      try {
-        const response = await communityApi.getComments(articleId)
-        comments.value = response?.data || response || []
-      } catch (error) {
-        console.error('댓글 조회 실패:', error)
-        error.value = '댓글을 불러오는데 실패했습니다.'
-      }
-    }
-
-    const submitComment = async () => {
-      if (!newComment.value.trim()) return
-      
-      try {
-        await communityApi.createComment(articleId, { content: newComment.value })
-        newComment.value = ''
-        await fetchComments()
-      } catch (error) {
-        console.error('댓글 작성 실패:', error)
-        alert('댓글 작성에 실패했습니다.')
-      }
-    }
-
-    const deleteComment = async (commentId) => {
-      if (!confirm('댓글을 삭제하시겠습니까?')) return
-      
-      try {
-        await communityApi.deleteComment(commentId)
-        await fetchComments()
-      } catch (error) {
-        console.error('댓글 삭제 실패:', error)
-        alert('댓글 삭제에 실패했습니다.')
-      }
-    }
-
-    // 댓글 수정 관련 함수들
-    const startEditComment = (comment) => {
-      comment.isEditing = true
-      comment.editContent = comment.content
-    }
-
-    const saveEditComment = async (comment) => {
-      if (!comment || !comment.id) {
-        alert('댓글 정보가 올바르지 않습니다.')
-        return
-      }
-      const nextContent = (comment.editContent || '').trim()
-      if (!nextContent) {
-        alert('내용을 입력하세요.')
-        return
-      }
-      try {
-        await communityApi.updateComment(comment.id, { content: nextContent })
-        // 서버 기준으로 다시 불러와 동기화
-        await fetchComments()
-      } catch (error) {
-        console.error('댓글 수정 실패:', error)
-        const msg = error?.response?.data?.message || '댓글 수정에 실패했습니다.'
-        alert(msg)
-      } finally {
-        if (comment) {
-          comment.isEditing = false
-          delete comment.editContent
-        }
-      }
-    }
-
-    const cancelEditComment = (comment) => {
-      comment.isEditing = false
-      delete comment.editContent
-    }
     
-    // 페이지 로드 시 게시글 조회
     onMounted(() => {
       fetchArticle()
       fetchComments()
@@ -256,27 +377,29 @@ export default {
     
     return {
       article,
+      comments,
       loading,
       error,
-      isLiked,
       liking,
-      fetchArticle,
-      formatDate,
-      toggleLike,
-      goBack,
-      comments,
+      isLiked,
       newComment,
+      likeButtonLabel,
+      articleLikeCount,
+      fetchArticle,
+      toggleLike,
       submitComment,
-      deleteComment,
       startEditComment,
+      cancelEditComment,
       saveEditComment,
-      cancelEditComment
+      deleteComment,
+      formatDate,
+      goBack
     }
   }
 }
 </script>
 
- <style scoped>
+<style scoped>
 .detail-container {
   max-width: 800px;
   margin: 0 auto;
@@ -286,17 +409,16 @@ export default {
 .loading, .error {
   text-align: center;
   padding: 40px;
-  color: #666;
 }
 
 .error {
-  color: #e74c3c;
+  color: #dc3545;
 }
 
 .retry-button {
   margin-top: 10px;
   padding: 8px 16px;
-  background: #3498db;
+  background: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
@@ -306,92 +428,96 @@ export default {
 .article-detail {
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   overflow: hidden;
 }
 
 .article-header {
-  padding: 30px;
-  border-bottom: 1px solid #eee;
+  padding: 24px;
+  border-bottom: 1px solid #e9ecef;
 }
 
 .article-header h1 {
-  font-size: 2rem;
-  color: #333;
-  margin-bottom: 15px;
+  margin: 0 0 16px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #212529;
 }
 
 .article-meta {
   display: flex;
-  gap: 20px;
-  color: #666;
-  font-size: 0.9rem;
+  gap: 16px;
+  font-size: 14px;
+  color: #6c757d;
 }
 
 .article-content {
-  padding: 30px;
+  padding: 24px;
   line-height: 1.6;
-  color: #333;
+  color: #495057;
 }
 
 .article-actions {
-  padding: 20px 30px;
-  border-top: 1px solid #eee;
+  padding: 16px 24px;
+  border-top: 1px solid #e9ecef;
   display: flex;
-  gap: 10px;
-  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
 }
 
 .article-actions button {
-  padding: 10px 20px;
-  border: none;
+  padding: 8px 16px;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
+  background: white;
   cursor: pointer;
-  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.article-actions button:hover {
+  background: #f8f9fa;
 }
 
 .article-actions button.liked {
-  background: #e74c3c;
+  background: #dc3545;
   color: white;
+  border-color: #dc3545;
 }
 
 .back-button {
-  background: #95a5a6;
-  color: white;
+  background: #6c757d !important;
+  color: white !important;
+  border-color: #6c757d !important;
 }
 
-.back-button:hover {
-  background: #7f8c8d;
-}
-
-/* 댓글 섹션 스타일 */
 .comment-section {
-  margin-top: 30px;
-  padding: 30px;
-  border-top: 1px solid #eee;
+  padding: 24px;
+  border-top: 1px solid #e9ecef;
 }
 
 .comment-section h3 {
-  margin-bottom: 20px;
-  color: #333;
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .comment-form {
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .comment-form textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
   resize: vertical;
-  margin-bottom: 10px;
+  font-family: inherit;
+  margin-bottom: 12px;
 }
 
 .comment-form button {
   padding: 8px 16px;
-  background: #3498db;
+  background: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
@@ -399,20 +525,21 @@ export default {
 }
 
 .comment-form button:disabled {
-  background: #bdc3c7;
+  background: #6c757d;
   cursor: not-allowed;
 }
 
 .comment-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
 }
 
 .comment-item {
-  padding: 15px;
-  border: 1px solid #eee;
-  border-radius: 4px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #f8f9fa;
 }
 
 .comment-header {
@@ -424,91 +551,76 @@ export default {
 
 .comment-author {
   font-weight: 600;
-  color: #3498db;
+  color: #495057;
 }
 
 .comment-date {
-  color: #666;
-  font-size: 0.9rem;
+  font-size: 12px;
+  color: #6c757d;
 }
 
 .comment-actions {
   display: flex;
-  gap: 5px;
+  gap: 8px;
 }
 
 .edit-btn, .delete-btn {
   padding: 4px 8px;
-  border: none;
+  font-size: 12px;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
+  background: white;
   cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.edit-btn {
-  background: #f39c12;
-  color: white;
 }
 
 .edit-btn:hover {
-  background: #e67e22;
-}
-
-.delete-btn {
-  background: #e74c3c;
-  color: white;
+  background: #e3f2fd;
+  border-color: #2196f3;
 }
 
 .delete-btn:hover {
-  background: #c0392b;
+  background: #ffebee;
+  border-color: #f44336;
 }
 
 .comment-content {
-  color: #333;
+  color: #495057;
   line-height: 1.5;
-}
-
-.comment-edit-form {
-  margin-top: 10px;
 }
 
 .comment-edit-form textarea {
   width: 100%;
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
   resize: vertical;
+  font-family: inherit;
   margin-bottom: 8px;
 }
 
 .edit-actions {
   display: flex;
-  gap: 5px;
+  gap: 8px;
 }
 
 .edit-actions button {
-  padding: 4px 8px;
-  border: none;
+  padding: 6px 12px;
+  font-size: 12px;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
+  background: white;
   cursor: pointer;
-  font-size: 0.8rem;
 }
 
 .edit-actions button:first-child {
-  background: #27ae60;
+  background: #28a745;
   color: white;
+  border-color: #28a745;
 }
 
-.edit-actions button:first-child:hover {
-  background: #229954;
+.edit-actions button:first-child:disabled {
+  background: #6c757d;
+  border-color: #6c757d;
+  cursor: not-allowed;
 }
-
-.edit-actions button:last-child {
-  background: #95a5a6;
-  color: white;
-}
-
-.edit-actions button:last-child:hover {
-  background: #7f8c8d;
-}
-</style>    
+</style>

@@ -40,7 +40,7 @@ export default {
       default: 360
     }
   },
-  setup(props) {
+  setup(props, { emit }) {
     const mapId = computed(() => 'map-' + props.courseId)
     const computedHeight = computed(() => typeof props.height === 'number' ? `${props.height}px` : (props.height || '360px'))
     let mapInstance = null
@@ -203,6 +203,9 @@ export default {
               map.setLevel(4)
               map.panTo(marker.getPosition())
               infowindow.open(map, marker)
+              
+              // 부모 컴포넌트에 명소 선택 이벤트 전달
+              emit('attraction-selected', attraction)
             })
           }
         })

@@ -143,10 +143,10 @@
     methods: {
       async loadAttractions() {
         try {
+          const courseId = this.course.id || this.course.courseId
           const response = await courseApi.getNearbyAttractions(
-            this.course.sidoCode || 1,
-            this.course.sigunguCode || 1,
-            21
+            courseId,
+            12
           )
           if (response && response.status === 'success' && response.data && response.data.items) {
             this.availableAttractions = response.data.items.slice(0, 10)
@@ -187,14 +187,13 @@
           const payload = token ? JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))) : null
           const userEmail = payload?.email || payload?.sub
           const attractionIds = this.selectedAttractions.map(Number)
-          const due = this.selectedDate.toISOString().split('T')[0]
+          const due = this.selectedDate.toISOString()
           const cid = this.course?.courseId ?? this.course?.id
 
 
           await courseApi.registerSchedule(
             cid,
             due,
-            userEmail,
             attractionIds
           )
           this.$emit('schedule-registered')

@@ -84,7 +84,7 @@ import CourseAllTab from '../components/CourseAllTab.vue'
 import AttendanceModel from '../components/AttendanceModel.vue'
 import Pagination from '../components/pagination.vue'
 
-const selected = ref('main')
+const selected = ref('custom')
 const courses = ref([])
 const selectedCourse = ref(null)
 const courseDetail = ref(null)
@@ -165,28 +165,40 @@ const attractionsWithEndPoint = computed(() => {
 });
 
 onMounted(() => {
-  loadCourses()
+  console.log('🚀 onMounted 실행, selected:', selected.value)
+  // watch에서 이미 처리되지만, 확실하게 하기 위해 맞춤 탭도 여기서 호출
+  if (selected.value === 'custom') {
+    console.log('🔄 onMounted에서 맞춤 코스 로드 호출')
+    loadDiseaseCourses(1)
+  } else {
+    console.log('🔄 onMounted에서 일반 코스 로드 호출')
+    loadCourses()
+  }
 })
 
 // 질병별 코스 로드(맞춤 탭 선택 시 호출)
 async function loadDiseaseCourses(pageArg = 1) {
-  if (selected.value !== 'custom') return
+  console.log('🔄 loadDiseaseCourses 호출됨, selected:', selected.value, 'pageArg:', pageArg)
+  if (selected.value !== 'custom') {
+    console.log('❌ 맞춤 탭이 아니므로 종료')
+    return
+  }
   currentPage.value = pageArg
   loading.value = true
   error.value = null
   try {
-    const token = localStorage.getItem('accessToken') || localStorage.getItem('token')
-    let email = ''
-    try {
-      if (token) {
-        const payload = JSON.parse(decodeURIComponent(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')))
-        email = payload.email || payload.username || ''
-      }
-    } catch (_) {}
-    const res = await courseApi.getDiseaseCourses(email, diseaseId.value, currentPage.value - 1, pageSize.value, sortBy.value)
+    console.log('📡 질병별 코스 API 호출 시작:', {
+      diseaseId: diseaseId.value,
+      page: currentPage.value - 1,
+      size: pageSize.value,
+      sortBy: sortBy.value
+    })
+    const res = await courseApi.getDiseaseCourses(diseaseId.value, currentPage.value - 1, pageSize.value, sortBy.value)
+    console.log('📡 API 응답:', res)
     const body = res?.data || res
     const list = Array.isArray(body) ? body : (body?.items || [])
     courses.value = normalizeCourseData(list)
+    console.log('✅ 맞춤 코스 로드 완료, 개수:', courses.value.length)
     // 총 페이지 계산: 우선순위 totalPages -> totalElements/size -> length
     if (body && typeof body.totalPages === 'number') {
       totalPagesCustom.value = body.totalPages
@@ -197,7 +209,7 @@ async function loadDiseaseCourses(pageArg = 1) {
       totalPagesCustom.value = Math.max(1, Math.ceil(courses.value.length / pageSize.value))
     }
   } catch (e) {
-    console.error('맞춤(질병) 코스 로드 실패:', e)
+    console.error('❌ 맞춤(질병) 코스 로드 실패:', e)
     error.value = '맞춤 코스를 불러오는데 실패했습니다.'
   } finally {
     loading.value = false
@@ -223,10 +235,12 @@ function onPageChangeCustom(nextPage) {
 
 // 탭 전환 시 맞춤 탭이면 질병 코스 로드
 watch(selected, (val) => {
+  console.log('👀 selected 변경 감지:', val)
   if (val === 'custom') {
+    console.log('✅ 맞춤 탭 선택됨, loadDiseaseCourses 호출')
     loadDiseaseCourses(1)
   }
-})
+}, { immediate: true })
 </script>
 
 <style scoped>

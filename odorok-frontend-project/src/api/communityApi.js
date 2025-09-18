@@ -6,25 +6,21 @@ const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
-  withCredentials: true,
-  xsrfCookieName: 'XSRF-TOKEN',
-  xsrfHeaderName: 'X-XSRF-TOKEN',
+  withCredentials: false,
   headers: {
-    'Accept': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest'
+    'Accept': 'application/json'
   }
 })
 
-// CSRF 획득용(Authorization 자동첨부 금지)
-const csrfClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-  withCredentials: true,
-  headers: {
-    'Accept': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest'
-  }
-})
+// CSRF 해제로 인해 더 이상 필요 없음
+// const csrfClient = axios.create({
+//   baseURL: API_BASE_URL,
+//   timeout: 10000,
+//   withCredentials: false,
+//   headers: {
+//     'Accept': 'application/json'
+//   }
+// })
 
 // 요청 인터셉터
 apiClient.interceptors.request.use(
@@ -90,41 +86,18 @@ apiClient.interceptors.response.use(
   }
 )
 
-// CSRF 쿠키 보장 유틸
-const hasXsrfCookie = () => {
-  try {
-    return /(?:^|; )XSRF-TOKEN=/.test(document.cookie)
-  } catch (_) {
-    return false
-  }
-}
-
-const ensureCsrfCookie = async () => {
-  if (hasXsrfCookie()) return
-  const csrfPaths = [
-    import.meta.env?.VITE_CSRF_URL || '/csrf',
-    '/sanctum/csrf-cookie',
-    // 마지막 fallback: 리스트 조회(서버에서 토큰 내려주는 경우만 효과)
-    '/articles/search'
-  ]
-  for (const p of csrfPaths) {
-    try {
-      await csrfClient.get(p, { params: { _t: Date.now() } })
-      if (hasXsrfCookie()) return
-    } catch (_) {
-      // 다음 후보 시도
-    }
-  }
-}
+// CSRF 해제로 인해 더 이상 필요 없음
 
 // 커뮤니티 API 함수들
 export const communityApi = {
   // 게시글 목록 조회 (API 명세에 맞춤)
   getArticles: async (params) => {
     try {
+      console.log('📝 게시글 목록 조회 요청:', params)
       const response = await apiClient.get('/articles/search', {
         params: params
       })
+      console.log('📝 게시글 목록 조회 응답:', response.data)
       return response.data
     } catch (error) {
       console.error('게시글 목록 조회 실패:', error)
@@ -132,37 +105,73 @@ export const communityApi = {
     }
   },
 
+  getArticlesByDisease: async (payload) => {
+    try {
+      const response = await apiClient.post('/articles/diseases', payload)
+      return response.data
+    } catch (error) {
+      console.error('질병 추천 게시글 조회 실패:', error)
+      throw error
+    }
+  },
+
   // 게시글 상세 조회
   getArticle: async (articleId) => {
     try {
-      const response = await apiClient.get(`/articles/${articleId}`)
-      return response.data
+      const token = localStorage.getItem('accessToken')
+      console.log(`🔍 게시글 ${articleId} 상세 조회 시도...`)
+      
+      // fetch API로 직접 요청 (CSRF 문제 우회)
+      const response = await fetch(`https://odorok.duckdns.org/api/articles/${articleId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log(`✅ 게시글 ${articleId} 상세 조회 성공!`, data)
+        return data
+      } else {
+        console.log(`❌ 게시글 ${articleId} 상세 조회 실패: ${response.status}`)
+        throw new Error(`게시글 상세 조회 실패: ${response.status}`)
+      }
     } catch (error) {
       console.error('게시글 상세 조회 실패:', error)
       throw error
     }
   },
 
-  // 게시글 작성
-  createArticle: async (articleData) => {
-    try {
-      if (!hasXsrfCookie()) await ensureCsrfCookie()
-      // FormData일 경우 Content-Type은 브라우저가 boundary 포함해 자동 설정하도록 둡니다.
-      const response = await apiClient.post('/articles', articleData)
-      return response.data
-    } catch (error) {
-      // 1회 재시도(403/CSRF 의심 시)
-      if (error?.response?.status === 403) {
-        try {
-          await ensureCsrfCookie()
-          const retry = await apiClient.post('/articles', articleData)
-          return retry.data
-        } catch (e) {}
+    // 게시글 작성 (Swagger 문서 기준)
+    createArticle: async (articleData) => {
+      try {
+        console.log('📝 게시글 작성 시작')
+        
+        // Swagger 문서에 맞는 바디 형식으로 변환
+        const requestBody = {
+          data: {
+            title: articleData.title,
+            content: articleData.content,
+            boardType: articleData.boardType || 1,
+            notice: articleData.notice || false,
+            diseaseId: articleData.diseaseId || null,
+            courseId: articleData.courseId || null
+          },
+          images: articleData.images || []
+        }
+        
+        console.log('📤 전송할 데이터:', requestBody)
+        
+        const response = await apiClient.post('/articles', requestBody)
+        console.log('✅ 게시글 작성 성공!', response.data)
+        return response.data
+      } catch (error) {
+        console.error('게시글 작성 실패:', error)
+        throw error
       }
-      console.error('게시글 작성 실패:', error)
-      throw error
-    }
-  },
+    },
 
   // 게시글 수정
   updateArticle: async (articleId, articleData) => {
@@ -189,19 +198,20 @@ export const communityApi = {
   // 좋아요 토글
   toggleLike: async (articleId) => {
     try {
-      if (!hasXsrfCookie()) await ensureCsrfCookie()
-      // 일부 백엔드는 빈 바디라도 JSON을 기대할 수 있음 → {}
       const response = await apiClient.post(`/articles/${articleId}/likes`, {})
       return response.data
     } catch (error) {
-      if (error?.response?.status === 403) {
-        try {
-          await ensureCsrfCookie()
-          const retry = await apiClient.post(`/articles/${articleId}/likes`, {})
-          return retry.data
-        } catch (e) {}
-      }
       console.error('좋아요 토글 실패:', error)
+      throw error
+    }
+  },
+  // 좋아요 취소
+  unlikeArticle: async (articleId) => {
+    try {
+      const response = await apiClient.post(`/articles/${articleId}/unlikes`, {})
+      return response.data
+    } catch (error) {
+      console.error('좋아요 취소 실패:', error)
       throw error
     }
   },
@@ -209,8 +219,25 @@ export const communityApi = {
   // 댓글 목록 조회
   getComments: async (articleId, page = 1) => {
     try {
-      const response = await apiClient.get(`/articles/${articleId}/comments`, { params: { page } })
-      return response.data
+      const token = localStorage.getItem('accessToken')
+      console.log(`💬 게시글 ${articleId} 댓글 목록 조회 시도...`)
+      
+      const response = await fetch(`https://odorok.duckdns.org/api/articles/${articleId}/comments?page=${page}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log(`✅ 게시글 ${articleId} 댓글 목록 조회 성공!`, data)
+        return data
+      } else {
+        console.log(`❌ 게시글 ${articleId} 댓글 목록 조회 실패: ${response.status}`)
+        throw new Error(`댓글 목록 조회 실패: ${response.status}`)
+      }
     } catch (error) {
       console.error('댓글 목록 조회 실패:', error)
       throw error
@@ -220,13 +247,9 @@ export const communityApi = {
   // 댓글 작성
   createComment: async (articleId, commentData) => {
     try {
-      if (!hasXsrfCookie()) await ensureCsrfCookie()
       const response = await apiClient.post(`/articles/${articleId}/comments`, commentData)
       return response.data
     } catch (error) {
-      if (error?.response?.status === 403) {
-        try { await ensureCsrfCookie(); const retry = await apiClient.post(`/articles/${articleId}/comments`, commentData); return retry.data } catch (_) {}
-      }
       console.error('댓글 작성 실패:', error)
       throw error
     }

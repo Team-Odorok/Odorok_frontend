@@ -1,13 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router'
+<<<<<<< HEAD
 import HomeView from '@/views/HomeView.vue'
+=======
+>>>>>>> ea8b0f31e6c1b4af895f46aeb708b6e7ecb95b84
 import DiaryListView from '@/views/DiaryListView.vue'
 import DiaryDetailView from '@/views/DiaryDetailView.vue'
 import DiaryCreateStyleView from '@/views/DiaryCreateStyleView.vue'
 import DiaryCreateChatView from '@/views/DiaryCreateChatView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SignupView from '@/views/SignupView.vue'
+<<<<<<< HEAD
 import MyPageView from '@/views/MyPageView.vue'
+=======
+>>>>>>> ea8b0f31e6c1b4af895f46aeb708b6e7ecb95b84
 import CourseSearchView from '../views/CourseSearchView.vue'
+import MyPageView from '../views/MyPageView.vue'
+import { isLoggedIn, logout } from '@/services/authService'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -53,26 +61,70 @@ const router = createRouter({
       component: DiaryCreateChatView,
     },
     {
+      path: '/login',
+      name: 'login',
+      component: LoginView,
+    },
+    {
+      path: '/signup',
+      name: 'signup',
+      component: SignupView,
+    },
+    {
+      path: '/diaries',
+      name: 'diaries',
+      component: DiaryListView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/diaries/:diaryId',
+      name: 'diary-detail',
+      component: DiaryDetailView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/diaries/create/style',
+      name: 'diary-create-style',
+      component: DiaryCreateStyleView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/diaries/create/chat/:visitedCourseId/:style',
+      name: 'diary-create-chat',
+      component: DiaryCreateChatView,
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/course-search',
       name: 'CourseSearch',
       component: CourseSearchView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/community',
       name: 'Community',
-      component: () => import('../views/CommunityListView.vue')
+      component: () => import('../views/CommunityListView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/community/write',
       name: 'CommunityWrite',
-      component: () => import('../views/CommunityWriteView.vue')
+      component: () => import('../views/CommunityWriteView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/community/:id',
       name: 'CommunityDetail',
-      component: () => import('../views/CommunityDetailView.vue')
+      component: () => import('../views/CommunityDetailView.vue'),
+      meta: { requiresAuth: true }
     },
     { path: '/nearby-attractions', name: 'NearbyAttractions', component: () => import('../views/NearbyAttractionsView.vue') },
+    {
+      path: '/mypage',
+      name: 'mypage',
+      component: MyPageView,
+      meta: { requiresAuth: true }
+    },
     {
       path: '/nearby-attractions/:courseId',
       name: 'nearby-attractions',
@@ -95,6 +147,24 @@ const router = createRouter({
       }
     },
   ],
+})
+
+// 라우터 가드 - 로그인 상태 확인
+router.beforeEach((to, from, next) => {
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const isAuthenticated = isLoggedIn()
+
+  if (requiresAuth && !isAuthenticated) {
+    // 로그인이 필요한 페이지인데 로그인하지 않은 경우
+    console.log('로그인이 필요합니다. 로그인 페이지로 이동합니다.')
+    next('/login')
+  } else if (to.path === '/login' && isAuthenticated) {
+    // 이미 로그인한 상태에서 로그인 페이지로 가려는 경우
+    console.log('이미 로그인되어 있습니다. 메인 페이지로 이동합니다.')
+    next('/course-search')
+  } else {
+    next()
+  }
 })
 
 export default router
