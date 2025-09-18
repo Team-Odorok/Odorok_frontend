@@ -57,12 +57,14 @@
 
         <!-- 사진 첨부 섹션 -->
         <div class="image-section">
-          <div class="image-section-header">
-            <h4>📷 일지 사진 첨부</h4>
-            <button @click="showImageUpload = true" class="add-image-btn">
-              사진 추가
+        <div class="image-section-header">
+          <h4>📷 일지 사진 첨부</h4>
+          <div class="image-buttons">
+            <button @click="triggerFileInput" class="image-action-btn add-btn">
+              {{ attachedImages.length > 0 ? '사진 추가' : '사진 첨부' }}
             </button>
           </div>
+        </div>
 
           <!-- 이미지 미리보기 -->
           <div v-if="attachedImages.length > 0" class="image-preview">
@@ -80,32 +82,18 @@
 
           <!-- 이미지가 없을 때 안내 메시지 -->
           <div v-else class="no-images-message">
-            <p>아직 첨부된 사진이 없습니다. "사진 추가" 버튼을 눌러 여행 사진을 첨부해보세요!</p>
+            <p>아직 첨부된 사진이 없습니다. "사진 추가" 버튼을 눌러 사진을 첨부해보세요!</p>
           </div>
 
-          <!-- 이미지 업로드 폼 -->
-          <div v-if="showImageUpload" class="image-upload-form">
-            <h4>사진 첨부</h4>
-            <div class="image-upload-area">
-              <input
-                ref="imageInput"
-                type="file"
-                multiple
-                accept="image/*"
-                @change="handleImageUpload"
-                class="image-input"
-              />
-              <div class="upload-placeholder">
-                <span class="upload-icon">📷</span>
-                <p>클릭하여 사진을 선택하거나 여기에 드래그하세요</p>
-                <p class="upload-hint">여러 장의 사진을 선택할 수 있습니다</p>
-              </div>
-            </div>
-            <div class="image-upload-actions">
-              <button @click="cancelImageUpload" class="cancel-btn">취소</button>
-              <button @click="confirmImageUpload" class="confirm-btn">확인</button>
-            </div>
-          </div>
+          <!-- 숨겨진 파일 입력 -->
+          <input
+            ref="imageInput"
+            type="file"
+            multiple
+            accept="image/*"
+            @change="handleImageUpload"
+            style="display: none"
+          />
         </div>
 
         <!-- 일지 탭 -->
@@ -528,38 +516,21 @@ export default {
           content: msg.content
         }))
         
-        console.log('대화 종료 - 전체 대화 내역:', chatLog)
-        console.log('대화 종료 - chatLog 길이:', chatLog.length)
-        
         // 전체 대화 내역으로 일지 생성 요청 (regenerateDiary API 사용)
         const response = await regenerateDiaryAPI('대화를 종료하고 일지를 생성해주세요.', chatLog)
         
-        console.log('대화 종료 응답:', response)
-        console.log('응답 데이터:', response.data)
-        
         if (response.data && response.data.content) {
-          console.log('content 타입:', typeof response.data.content)
-          console.log('content 값:', response.data.content)
-          
           if (Array.isArray(response.data.content)) {
-            console.log('content는 배열, 길이:', response.data.content.length)
             const newContent = response.data.content[response.data.content.length - 1]
-            console.log('마지막 일지 내용:', newContent)
-            
             generatedDiaries.value = [{
               content: newContent
             }]
           } else {
-            console.log('content는 배열이 아님, 직접 사용')
             generatedDiaries.value = [{
               content: response.data.content
             }]
           }
         } else {
-          console.log('응답 구조가 예상과 다름, 전체 응답 사용')
-          console.log('response.data:', response.data)
-          console.log('response.content:', response.content)
-          
           generatedDiaries.value = [{
             content: response.data?.content || response.content || '대화 내용을 바탕으로 일지를 생성했습니다.'
           }]
@@ -567,7 +538,6 @@ export default {
         
         // 방문 코스명으로 제목 초기화
         diaryTitle.value = `${courseNames.value[visitedCourseId] || `코스 ${visitedCourseId}`} 방문 일지`
-        console.log('일지 제목:', diaryTitle.value)
         isCompleted.value = true
         showCompletionNotification.value = true
         setTimeout(() => {
@@ -626,40 +596,22 @@ export default {
           content: msg.content
         }))
         
-        console.log('현재 chatMessages:', chatMessages.value)
-        console.log('변환된 chatLog:', chatLog)
-        console.log('chatLog 길이:', chatLog.length)
-        console.log('일지 재생성 요청:', { feedback: feedbackText, chatLog })
         const response = await regenerateDiaryAPI(feedbackText, chatLog)
-        console.log('일지 재생성 응답:', response)
-        console.log('응답 데이터 타입:', typeof response.data)
-        console.log('응답 데이터:', response.data)
         
         if (response.data && response.data.content) {
-          console.log('content 타입:', typeof response.data.content)
-          console.log('content 값:', response.data.content)
-          
           if (Array.isArray(response.data.content)) {
-            console.log('content는 배열, 길이:', response.data.content.length)
             const newContent = response.data.content[response.data.content.length - 1]
-            console.log('마지막 일지 내용:', newContent)
-            
             generatedDiaries.value.push({
               content: newContent
             })
             selectedDiaryIndex.value = generatedDiaries.value.length - 1
           } else {
-            console.log('content는 배열이 아님, 직접 사용')
             generatedDiaries.value.push({
               content: response.data.content
             })
             selectedDiaryIndex.value = generatedDiaries.value.length - 1
           }
         } else {
-          console.log('응답 구조가 예상과 다름, 전체 응답 사용')
-          console.log('response.data:', response.data)
-          console.log('response.content:', response.content)
-          
           generatedDiaries.value.push({
             content: response.data?.content || response.content || '재생성된 일지'
           })
@@ -709,34 +661,27 @@ export default {
     // 이미지 업로드 처리
     const handleImageUpload = (event) => {
       const files = Array.from(event.target.files)
-      selectedImages.value = files.map(file => ({
+      const newImages = files.map(file => ({
         file: file,
         preview: URL.createObjectURL(file),
         name: file.name
       }))
-    }
-
-    // 이미지 업로드 취소
-    const cancelImageUpload = () => {
-      showImageUpload.value = false
-      selectedImages.value = []
+      
+      // 선택된 이미지들을 바로 attachedImages에 추가
+      if (newImages.length > 0) {
+        attachedImages.value.push(...newImages)
+      }
+      
+      // 파일 입력 초기화
       if (imageInput.value) {
         imageInput.value.value = ''
       }
     }
 
-    // 이미지 업로드 확인
-    const confirmImageUpload = () => {
-      if (selectedImages.value.length > 0) {
-        // 공통 이미지 배열에 새 이미지 추가
-        attachedImages.value.push(...selectedImages.value)
-        
-        // 상태 초기화
-        showImageUpload.value = false
-        selectedImages.value = []
-        if (imageInput.value) {
-          imageInput.value.value = ''
-        }
+    // 파일 입력 트리거
+    const triggerFileInput = () => {
+      if (imageInput.value) {
+        imageInput.value.click()
       }
     }
 
@@ -799,14 +744,12 @@ export default {
       if (!selectedDiary.value) return
       if (!visitedCourseId) {
         error.value = '방문 코스 ID가 없습니다. 다시 시작해주세요.'
-        console.error('visitedCourseId가 없습니다:', visitedCourseId)
         return
       }
       
       try {
         // 실제 API 호출
         const imageFiles = attachedImages.value.map(img => img.file)
-        console.log('일지 저장 시도 - visitedCourseId:', visitedCourseId)
         const response = await saveDiary(diaryTitle.value, selectedDiary.value.content, imageFiles, visitedCourseId)
         
         if (response.status === 'CREATED') {
@@ -816,15 +759,11 @@ export default {
             ? `일지와 ${imageCount}장의 사진이 성공적으로 저장되었습니다!`
             : '일지가 성공적으로 저장되었습니다!'
           
-          console.log('일지 저장 성공! diaryId:', response.data?.diaryId)
           alert(message)
-          router.push('/')
-        } else {
-          console.log('예상치 못한 응답 상태:', response.status)
+          router.push('/diaries')
         }
       } catch (err) {
         error.value = err.message || '일지 저장에 실패했습니다.'
-        console.error('Error saving diary:', err)
       }
     }
 
@@ -859,9 +798,7 @@ export default {
       showRegenerateForm,
       feedback,
       isRegenerating,
-      showImageUpload,
       imageInput,
-      selectedImages,
       attachedImages,
       goBack,
       startChat,
@@ -876,8 +813,7 @@ export default {
       getCompletionTitle,
       getCompletionMessage,
       handleImageUpload,
-      cancelImageUpload,
-      confirmImageUpload,
+      triggerFileInput,
       removeImage,
       // 제목/내용 수정 관련 함수들
       isEditingTitle,
@@ -1423,8 +1359,12 @@ export default {
   font-weight: 600;
 }
 
-.add-image-btn {
-  background: #17a2b8;
+.image-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.image-action-btn {
   color: white;
   border: none;
   padding: 8px 16px;
@@ -1432,12 +1372,19 @@ export default {
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
 }
 
-.add-image-btn:hover {
-  background: #138496;
+.image-action-btn.add-btn {
+  background: #17a2b8;
 }
+
+.image-action-btn.add-btn:hover {
+  background: #138496;
+  transform: translateY(-1px);
+}
+
+
 
 .no-images-message {
   padding: 40px 30px;
@@ -1447,71 +1394,6 @@ export default {
 
 
 
-/* 이미지 업로드 폼 */
-.image-upload-form {
-  padding: 20px 30px;
-  background: #f8f9fa;
-  border-top: 1px solid #e9ecef;
-}
-
-.image-upload-form h4 {
-  margin-bottom: 15px;
-  color: #333;
-  font-size: 1.1rem;
-}
-
-.image-upload-area {
-  position: relative;
-  border: 2px dashed #dee2e6;
-  border-radius: 8px;
-  padding: 40px 20px;
-  text-align: center;
-  background: white;
-  transition: border-color 0.3s ease;
-  cursor: pointer;
-}
-
-.image-upload-area:hover {
-  border-color: #007bff;
-}
-
-.image-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.upload-placeholder {
-  pointer-events: none;
-}
-
-.upload-icon {
-  font-size: 3rem;
-  margin-bottom: 15px;
-  display: block;
-}
-
-.upload-placeholder p {
-  margin: 5px 0;
-  color: #666;
-  font-size: 1rem;
-}
-
-.upload-hint {
-  font-size: 0.9rem !important;
-  color: #999 !important;
-}
-
-.image-upload-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 15px;
-}
 
 /* 이미지 미리보기 */
 .image-preview {
@@ -1861,6 +1743,16 @@ export default {
     flex-direction: column;
     gap: 10px;
     text-align: center;
+  }
+  
+  .image-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .image-action-btn {
+    width: 100%;
+    padding: 10px 16px;
   }
   
   .no-images-message {

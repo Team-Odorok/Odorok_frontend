@@ -6,7 +6,7 @@ import axios from 'axios'
 import { getAccessToken } from './authService'
 
 // 일지 관련 API 서비스
-const API_BASE_URL = 'http://odorok.duckdns.org:8080/api'
+const API_BASE_URL = 'https://odorok.duckdns.org/api'
 
 // Axios 인스턴스 생성
 const apiClient = axios.create({
@@ -25,14 +25,17 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
     // FormData인 경우 Content-Type 헤더를 제거하여 axios가 자동으로 multipart/form-data로 설정하도록 함
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type']
-      console.log('FormData 감지됨, Content-Type 헤더 제거')
     }
+    
     return config
   },
-  (error) => Promise.reject(error)
+  error => {
+    return Promise.reject(error)
+  }
 )
 
 export default apiClient
@@ -41,24 +44,10 @@ export default apiClient
 apiClient.interceptors.response.use(
   response => response.data, // 자동으로 data만 반환
   error => {
-    console.error('API Error:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      url: error.config?.url,
-      method: error.config?.method,
-      data: error.response?.data
-    })
-    
     if (error.response?.status === 401) {
-      console.error('AccessToken이 유효하지 않습니다.')
       // TODO: 토큰 갱신 또는 로그인 페이지로 리다이렉트
     } else if (error.response?.status === 403) {
-      console.error('접근 권한이 없습니다. (403 Forbidden)')
       // TODO: 권한 부족 처리
-    } else if (error.response?.status === 404) {
-      console.error('요청한 리소스를 찾을 수 없습니다. (404 Not Found)')
-    } else if (error.response?.status >= 500) {
-      console.error('서버 내부 오류가 발생했습니다.')
     }
     
     return Promise.reject(error)
@@ -82,19 +71,18 @@ export const getDiaryDetail = async (diaryId) => {
     const response = await apiClient.get(`/diaries/${diaryId}`)
     
     // API 응답 구조에 따른 에러 처리
-    if (response.status === 'UNAUTHORIZED') {
-      throw new Error('AccessToken이 유효하지 않습니다.')
-    } else if (response.status === 'FORBIDDEN') {
+    if (response.status === 401) {
+      throw new Error('인증이 필요합니다. 로그인을 다시 해주세요.')
+    } else if (response.status === 403) {
       throw new Error('해당 일지에 접근할 수 없습니다.')
-    } else if (response.status === 'NOT_FOUND') {
+    } else if (response.status === 404) {
       throw new Error('해당 일지를 찾을 수 없습니다.')
-    } else if (response.status === 'INTERNAL_SERVER_ERROR') {
+    } else if (response.status === 500) {
       throw new Error('일지 조회 중 예외 발생')
     }
     
     return response
   } catch (error) {
-    console.error('Failed to fetch diary detail:', error)
     throw error
   }
 }
@@ -124,24 +112,26 @@ export const updateDiary = async (diaryId, diaryData) => {
 // 일지 삭제
 export const deleteDiary = async (diaryId) => {
   try {
-    console.log(`일지 삭제 시도 중: diaryId=${diaryId}`)
     const response = await apiClient.delete(`/diaries/${diaryId}`)
-    console.log('일지 삭제 성공:', response)
+    
+    // 성공 응답 처리
+    if (response.status === 200 || response.status === 204) {
+      return response
+    }
     
     // API 응답 구조에 따른 에러 처리
-    if (response.status === 'UNAUTHORIZED') {
-      throw new Error('AccessToken이 유효하지 않습니다.')
-    } else if (response.status === 'FORBIDDEN') {
-      throw new Error('해당 일지를 삭제할 권한이 없습니다.')
-    } else if (response.status === 'NOT_FOUND') {
+    if (response.status === 401) {
+      throw new Error('인증이 필요합니다. 로그인을 다시 해주세요.')
+    } else if (response.status === 403) {
+      throw new Error('해당 일지를 삭제할 권한이 없습니다. 본인이 작성한 일지만 삭제할 수 있습니다.')
+    } else if (response.status === 404) {
       throw new Error('해당 일지를 찾을 수 없습니다.')
-    } else if (response.status === 'INTERNAL_SERVER_ERROR') {
-      throw new Error('일지 삭제 중 예외 발생')
+    } else if (response.status === 500) {
+      throw new Error('서버 내부 오류가 발생했습니다.')
     }
     
     return response
   } catch (error) {
-    console.error('Failed to delete diary:', error)
     throw error
   }
 }
@@ -149,12 +139,8 @@ export const deleteDiary = async (diaryId) => {
 // 일지 생성 권한 조회
 export const getDiaryPermissions = async () => {
   try {
-    // 권한 확인은 한 번만 시도 (이미 성공 확인됨)
     const endpoint = '/diaries/permission'
-    
-    console.log(`권한 확인 시도 중: ${endpoint}`)
     const response = await apiClient.get(endpoint)
-    console.log(`${endpoint} 성공:`, response)
     
     // API 응답 구조에 따른 에러 처리
     if (response.status === 'UNAUTHORIZED') {
@@ -233,80 +219,58 @@ export const submitAnswer = async (answer, chatLog) => {
 // 일지 최종 저장
 export const saveDiary = async (title, content, images = [], visitedCourseId = null) => {
   try {
-    console.log('=== 일지 저장 요청 시작 ===')
-    console.log('제목:', title)
-    console.log('제목 타입:', typeof title)
-    console.log('제목 길이:', title?.length || 0)
-    console.log('내용:', content)
-    console.log('내용 타입:', typeof content)
-    console.log('내용 길이:', content?.length || 0)
-    console.log('이미지 개수:', images?.length || 0)
-    console.log('visitedCourseId:', visitedCourseId)
-    
     if (!visitedCourseId) {
-      console.log('visitedCourseId가 없지만 API 호출을 시도합니다.')
+      throw new Error('visitedCourseId는 필수입니다.')
     }
     
     // API 스펙에 맞게 FormData로 구성
     const formData = new FormData()
     
-    // diary 객체를 JSON 문자열로 변환하여 FormData에 추가
+    // diary 객체를 JSON 문자열로 변환하여 FormData에 추가 (application/json)
     const diaryData = {
-      vcourseId: parseInt(visitedCourseId) || 0, // API 스펙에 맞게 vcourseId 필드 추가
+      vcourseId: parseInt(visitedCourseId),
       title: title,
       content: content
     }
     
-    formData.append('diary', JSON.stringify(diaryData))
+    // diary 필드를 JSON 문자열로 추가 (application/json 타입)
+    const diaryBlob = new Blob([JSON.stringify(diaryData)], { type: 'application/json' })
+    formData.append('diary', diaryBlob)
     
-    // images 배열을 FormData에 추가 (File 객체인 경우에만)
+    // 이미지 파일들을 FormData에 추가 (각각 타입 지정)
     if (images && images.length > 0) {
-      images.forEach(image => {
+      images.forEach((image, index) => {
         if (image instanceof File) {
-          formData.append('images', image)
+          // 이미지 타입 지정
+          const imageType = image.type || 'image/jpeg'
+          const imageBlob = new Blob([image], { type: imageType })
+          formData.append('images', imageBlob, image.name)
         }
       })
     }
     
-    console.log('FormData 구성 완료')
-    console.log('diary 데이터:', diaryData)
-    console.log('이미지 개수:', images?.length || 0)
-    console.log('visitedCourseId:', visitedCourseId)
+    const response = await apiClient.post('/diaries', formData)
     
-    // multipart/form-data로 요청
-    console.log('multipart/form-data 형식으로 시도...')
-    console.log('FormData 객체:', formData)
-    console.log('FormData 크기:', formData.get('diary')?.length || 0)
-    
-    const response = await apiClient.post('/diaries', formData, {
-      headers: {
-        'Content-Type': undefined // multipart/form-data 자동 설정을 위해 undefined로 설정
-      }
-    })
-    
-    console.log('일지 저장 응답:', response)
+    // 성공 응답 처리
+    if (response.status === 200 || response.status === 201) {
+      return response
+    }
     
     // API 응답 구조에 따른 에러 처리
-    if (response.status === 'BAD_REQUEST') {
-      throw new Error('title과 content는 필수입니다.')
-    } else if (response.status === 'UNAUTHORIZED') {
-      throw new Error('AccessToken이 유효하지 않습니다.')
-    } else if (response.status === 'NOT_FOUND') {
-      throw new Error('해당 draftDiaryId를 찾을 수 없습니다.')
-    } else if (response.status === 'INTERNAL_SERVER_ERROR') {
-      throw new Error('일지 생성 중 예외 발생')
+    if (response.status === 400) {
+      throw new Error('잘못된 요청입니다. title, content, vcourseId를 확인해주세요.')
+    } else if (response.status === 401) {
+      throw new Error('인증이 필요합니다. 로그인을 다시 해주세요.')
+    } else if (response.status === 403) {
+      throw new Error('접근 권한이 없습니다.')
+    } else if (response.status === 404) {
+      throw new Error('요청한 리소스를 찾을 수 없습니다.')
+    } else if (response.status === 500) {
+      throw new Error('서버 내부 오류가 발생했습니다.')
     }
     
     return response
   } catch (error) {
-    console.error('=== 일지 저장 실패 ===')
-    console.error('에러 객체:', error)
-    console.error('에러 메시지:', error.message)
-    console.error('에러 응답:', error.response)
-    console.error('에러 상태:', error.response?.status)
-    console.error('에러 데이터:', error.response?.data)
-    console.error('에러 헤더:', error.response?.headers)
-    console.error('요청 설정:', error.config)
     throw error
   }
 }
@@ -314,25 +278,14 @@ export const saveDiary = async (title, content, images = [], visitedCourseId = n
 // 사용 가능한 코스 목록 조회
 export const getAvailableCourses = async () => {
   try {
-    // 스웨거에서 확인한 정확한 엔드포인트 사용
     const endpoint = '/diaries/available-course'
-    
-    console.log(`시도 중: ${endpoint}`)
     const response = await apiClient.get(endpoint)
-    console.log(`${endpoint} 성공:`, response)
     
     // 응답 데이터 구조 확인 및 정규화
     if (response && response.data) {
       // 스웨거 응답 구조: { status: "success", message: "...", data: { response: [] } }
       if (response.data.response && Array.isArray(response.data.response)) {
-        const courses = response.data.response
-        console.log(`일지 생성 가능한 코스 개수: ${courses.length}개`)
-        
-        if (courses.length === 0) {
-          console.log('💡 모든 방문한 코스에 이미 일지가 작성되었거나, 일지 작성 가능한 코스가 없습니다.')
-        }
-        
-        return courses
+        return response.data.response
       }
       // data가 배열인 경우 그대로 반환
       if (Array.isArray(response.data)) {

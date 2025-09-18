@@ -1,10 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import HomeView from '@/views/HomeView.vue'
 import DiaryListView from '@/views/DiaryListView.vue'
 import DiaryDetailView from '@/views/DiaryDetailView.vue'
 import DiaryCreateStyleView from '@/views/DiaryCreateStyleView.vue'
 import DiaryCreateChatView from '@/views/DiaryCreateChatView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SignupView from '@/views/SignupView.vue'
+import MyPageView from '@/views/MyPageView.vue'
 import CourseSearchView from '../views/CourseSearchView.vue'
 
 const router = createRouter({
@@ -12,7 +14,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/diaries'
+      name: 'home',
+      component: HomeView
     },
     {
       path: '/login',
@@ -23,6 +26,11 @@ const router = createRouter({
       path: '/signup',
       name: 'signup',
       component: SignupView,
+    },
+    {
+      path: '/mypage',
+      name: 'mypage',
+      component: MyPageView,
     },
     {
       path: '/diaries',

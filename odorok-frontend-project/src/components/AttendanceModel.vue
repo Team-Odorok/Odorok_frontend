@@ -80,6 +80,13 @@ export default {
         this.attendedDateKeys = days.map(n => `${ym}-${String(n).padStart(2,'0')}`)
       } catch (e) {
         console.error('출석 월 조회 실패:', e)
+        // 서버 연결 실패 시 빈 배열로 초기화
+        this.attendedDateKeys = []
+        
+        // 사용자에게 알림 (선택사항)
+        if (e.code === 'ECONNABORTED' || e.code === 'ERR_NETWORK') {
+          console.warn('서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.')
+        }
       }
     },
     async checkInToday() {
