@@ -57,19 +57,18 @@ export const getAccessToken = () => {
   return localStorage.getItem('accessToken')
 }
 
-// 회원가입
 export const signup = async (email, password, nickname) => {
   try {
-    const response = await authClient.post('/api/auth/signup', {
-      email: email,
-      password: password,
-      nickname: nickname
+    const response = await authClient.post('/auth/signup', {
+      email,
+      password,
+      nickname
     })
-    
-    console.log('회원가입 성공:', response)
+
+    console.log('Signup succeeded:', response)
     return response
   } catch (error) {
-    console.error('회원가입 실패:', error.response?.status, error.response?.statusText)
+    console.error('Signup failed:', error.response?.status, error.response?.statusText)
     throw error
   }
 }
@@ -205,4 +204,37 @@ const exchangeCodeForToken = async (code) => {
   } catch (error) {
     return false
   }
+}
+export const refreshAccessToken = async () => {
+  try {
+    const response = await authClient.get('/auth/refresh-token')
+    handleLoginResponse(response)
+    return response
+  } catch (error) {
+    console.error('Token refresh failed:', error.response?.status, error.response?.statusText)
+    throw error
+  }
+}
+
+const decodeJwtPayload = (token) => {
+  if (!token || typeof token !== 'string') return null
+  const parts = token.split('.')
+  if (parts.length < 2) return null
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const decoded = atob(base64)
+    const jsonPayload = decodeURIComponent(Array.from(decoded).map(c => {
+      const code = c.charCodeAt(0).toString(16).padStart(2, '0')
+      return `%${code}`
+    }).join(''))
+    return JSON.parse(jsonPayload)
+  } catch (error) {
+    console.warn('Failed to decode JWT payload:', error)
+    return null
+  }
+}
+
+export const getAuthUser = () => {
+  const token = getAccessToken()
+  return decodeJwtPayload(token)
 }

@@ -4,7 +4,7 @@ import axios from 'axios'
 
 // 인증 전용 Axios 인스턴스
 const authClient = axios.create({
-  baseURL: 'https://odorok.duckdns.org', // 도메인으로 다시 변경 https://및 8080제거
+  baseURL: 'https://odorok.duckdns.org/api', // API base URL로 통일
   timeout: 30000, // 타임아웃을 30초로 증가
   withCredentials: true, // 쿠키 포함
   headers: {

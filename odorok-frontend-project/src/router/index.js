@@ -8,7 +8,6 @@ import LoginView from '@/views/LoginView.vue'
 import SignupView from '@/views/SignupView.vue'
 import MyPageView from '@/views/MyPageView.vue'
 import CourseSearchView from '../views/CourseSearchView.vue'
-import MyPageView from '../views/MyPageView.vue'
 import { isLoggedIn, logout } from '@/services/authService'
 
 const router = createRouter({
