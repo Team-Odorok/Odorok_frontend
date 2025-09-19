@@ -1,12 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import HomeView from '@/views/HomeView.vue'
 import DiaryListView from '@/views/DiaryListView.vue'
 import DiaryDetailView from '@/views/DiaryDetailView.vue'
 import DiaryCreateStyleView from '@/views/DiaryCreateStyleView.vue'
 import DiaryCreateChatView from '@/views/DiaryCreateChatView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SignupView from '@/views/SignupView.vue'
+import MyPageView from '@/views/MyPageView.vue'
 import CourseSearchView from '../views/CourseSearchView.vue'
-import MyPageView from '../views/MyPageView.vue'
 import { isLoggedIn, logout } from '@/services/authService'
 
 const router = createRouter({
@@ -14,7 +15,43 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/course-search'
+      name: 'home',
+      component: HomeView
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView,
+    },
+    {
+      path: '/signup',
+      name: 'signup',
+      component: SignupView,
+    },
+    {
+      path: '/mypage',
+      name: 'mypage',
+      component: MyPageView,
+    },
+    {
+      path: '/diaries',
+      name: 'diaries',
+      component: DiaryListView,
+    },
+    {
+      path: '/diaries/:diaryId',
+      name: 'diary-detail',
+      component: DiaryDetailView,
+    },
+    {
+      path: '/diaries/create/style',
+      name: 'diary-create-style',
+      component: DiaryCreateStyleView,
+    },
+    {
+      path: '/diaries/create/chat/:visitedCourseId/:style',
+      name: 'diary-create-chat',
+      component: DiaryCreateChatView,
     },
     {
       path: '/login',

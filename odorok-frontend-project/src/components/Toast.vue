@@ -61,7 +61,7 @@ export default {
 <style scoped>
 .toast {
   position: fixed;
-  top: 20px;
+  bottom: 20px;
   right: 20px;
   background: white;
   border-radius: 8px;
@@ -138,11 +138,11 @@ export default {
 
 .toast-enter-from {
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateY(100%);
 }
 
 .toast-leave-to {
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateY(100%);
 }
 </style>

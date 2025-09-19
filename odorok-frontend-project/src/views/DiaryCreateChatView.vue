@@ -24,6 +24,23 @@
 
           <!-- 일지 생성 완료 상태 -->
       <div v-else-if="isCompleted" class="diary-completion">
+        <!-- 일지 재생성 중 오버레이 -->
+        <div v-if="isRegenerating" class="regeneration-overlay">
+          <div class="regeneration-spinner">
+            <div class="spinner"></div>
+            <p>일지를 재생성하고 있습니다...</p>
+            <p class="regeneration-subtitle">잠시만 기다려주세요</p>
+          </div>
+        </div>
+        
+        <!-- 일지 저장 중 오버레이 -->
+        <div v-if="isSavingDiary" class="saving-overlay">
+          <div class="saving-spinner">
+            <div class="spinner"></div>
+            <p>일지를 저장하고 있습니다...</p>
+            <p class="saving-subtitle">잠시만 기다려주세요</p>
+          </div>
+        </div>
         <!-- 완료 알림 -->
         <div v-if="showCompletionNotification" class="completion-notification">
           <div class="notification-content">
@@ -57,12 +74,14 @@
 
         <!-- 사진 첨부 섹션 -->
         <div class="image-section">
-          <div class="image-section-header">
-            <h4>📷 일지 사진 첨부</h4>
-            <button @click="showImageUpload = true" class="add-image-btn">
-              사진 추가
+        <div class="image-section-header">
+          <h4>📷 일지 사진 첨부</h4>
+          <div class="image-buttons">
+            <button @click="triggerFileInput" class="image-action-btn add-btn">
+              {{ attachedImages.length > 0 ? '사진 추가' : '사진 첨부' }}
             </button>
           </div>
+        </div>
 
           <!-- 이미지 미리보기 -->
           <div v-if="attachedImages.length > 0" class="image-preview">
@@ -80,32 +99,18 @@
 
           <!-- 이미지가 없을 때 안내 메시지 -->
           <div v-else class="no-images-message">
-            <p>아직 첨부된 사진이 없습니다. "사진 추가" 버튼을 눌러 여행 사진을 첨부해보세요!</p>
+            <p>아직 첨부된 사진이 없습니다. "사진 추가" 버튼을 눌러 사진을 첨부해보세요!</p>
           </div>
 
-          <!-- 이미지 업로드 폼 -->
-          <div v-if="showImageUpload" class="image-upload-form">
-            <h4>사진 첨부</h4>
-            <div class="image-upload-area">
-              <input
-                ref="imageInput"
-                type="file"
-                multiple
-                accept="image/*"
-                @change="handleImageUpload"
-                class="image-input"
-              />
-              <div class="upload-placeholder">
-                <span class="upload-icon">📷</span>
-                <p>클릭하여 사진을 선택하거나 여기에 드래그하세요</p>
-                <p class="upload-hint">여러 장의 사진을 선택할 수 있습니다</p>
-              </div>
-            </div>
-            <div class="image-upload-actions">
-              <button @click="cancelImageUpload" class="cancel-btn">취소</button>
-              <button @click="confirmImageUpload" class="confirm-btn">확인</button>
-            </div>
-          </div>
+          <!-- 숨겨진 파일 입력 -->
+          <input
+            ref="imageInput"
+            type="file"
+            multiple
+            accept="image/*"
+            @change="handleImageUpload"
+            style="display: none"
+          />
         </div>
 
         <!-- 일지 탭 -->
@@ -144,8 +149,9 @@
               v-if="canRegenerate" 
               @click="openRegenerateForm"
               class="regenerate-btn"
+              :disabled="isRegenerating"
             >
-              재생성
+              {{ isRegenerating ? '재생성 중...' : '재생성' }}
             </button>
             <button 
               v-if="!isEditingContent" 
@@ -158,8 +164,8 @@
               <button @click="saveContent" class="save-content-btn">수정완료</button>
               <button @click="cancelEditContent" class="cancel-content-btn">취소</button>
             </div>
-            <button @click="handleSaveDiary" class="save-btn">
-              저장
+            <button @click="handleSaveDiary" class="save-btn" :disabled="isSavingDiary">
+              {{ isSavingDiary ? '저장 중...' : '저장' }}
             </button>
           </div>
 
@@ -289,6 +295,7 @@ export default {
     const isCompleted = ref(false)
     const isProcessing = ref(false)
     const isGeneratingDiary = ref(false) // 일지 생성 중 상태
+    const isSavingDiary = ref(false) // 일지 저장 중 상태
     const userInput = ref('')
     const chatMessages = ref([])
     const chatWindow = ref(null)
@@ -528,38 +535,21 @@ export default {
           content: msg.content
         }))
         
-        console.log('대화 종료 - 전체 대화 내역:', chatLog)
-        console.log('대화 종료 - chatLog 길이:', chatLog.length)
-        
         // 전체 대화 내역으로 일지 생성 요청 (regenerateDiary API 사용)
         const response = await regenerateDiaryAPI('대화를 종료하고 일지를 생성해주세요.', chatLog)
         
-        console.log('대화 종료 응답:', response)
-        console.log('응답 데이터:', response.data)
-        
         if (response.data && response.data.content) {
-          console.log('content 타입:', typeof response.data.content)
-          console.log('content 값:', response.data.content)
-          
           if (Array.isArray(response.data.content)) {
-            console.log('content는 배열, 길이:', response.data.content.length)
             const newContent = response.data.content[response.data.content.length - 1]
-            console.log('마지막 일지 내용:', newContent)
-            
             generatedDiaries.value = [{
               content: newContent
             }]
           } else {
-            console.log('content는 배열이 아님, 직접 사용')
             generatedDiaries.value = [{
               content: response.data.content
             }]
           }
         } else {
-          console.log('응답 구조가 예상과 다름, 전체 응답 사용')
-          console.log('response.data:', response.data)
-          console.log('response.content:', response.content)
-          
           generatedDiaries.value = [{
             content: response.data?.content || response.content || '대화 내용을 바탕으로 일지를 생성했습니다.'
           }]
@@ -567,7 +557,6 @@ export default {
         
         // 방문 코스명으로 제목 초기화
         diaryTitle.value = `${courseNames.value[visitedCourseId] || `코스 ${visitedCourseId}`} 방문 일지`
-        console.log('일지 제목:', diaryTitle.value)
         isCompleted.value = true
         showCompletionNotification.value = true
         setTimeout(() => {
@@ -626,40 +615,22 @@ export default {
           content: msg.content
         }))
         
-        console.log('현재 chatMessages:', chatMessages.value)
-        console.log('변환된 chatLog:', chatLog)
-        console.log('chatLog 길이:', chatLog.length)
-        console.log('일지 재생성 요청:', { feedback: feedbackText, chatLog })
         const response = await regenerateDiaryAPI(feedbackText, chatLog)
-        console.log('일지 재생성 응답:', response)
-        console.log('응답 데이터 타입:', typeof response.data)
-        console.log('응답 데이터:', response.data)
         
         if (response.data && response.data.content) {
-          console.log('content 타입:', typeof response.data.content)
-          console.log('content 값:', response.data.content)
-          
           if (Array.isArray(response.data.content)) {
-            console.log('content는 배열, 길이:', response.data.content.length)
             const newContent = response.data.content[response.data.content.length - 1]
-            console.log('마지막 일지 내용:', newContent)
-            
             generatedDiaries.value.push({
               content: newContent
             })
             selectedDiaryIndex.value = generatedDiaries.value.length - 1
           } else {
-            console.log('content는 배열이 아님, 직접 사용')
             generatedDiaries.value.push({
               content: response.data.content
             })
             selectedDiaryIndex.value = generatedDiaries.value.length - 1
           }
         } else {
-          console.log('응답 구조가 예상과 다름, 전체 응답 사용')
-          console.log('response.data:', response.data)
-          console.log('response.content:', response.content)
-          
           generatedDiaries.value.push({
             content: response.data?.content || response.content || '재생성된 일지'
           })
@@ -709,34 +680,27 @@ export default {
     // 이미지 업로드 처리
     const handleImageUpload = (event) => {
       const files = Array.from(event.target.files)
-      selectedImages.value = files.map(file => ({
+      const newImages = files.map(file => ({
         file: file,
         preview: URL.createObjectURL(file),
         name: file.name
       }))
-    }
-
-    // 이미지 업로드 취소
-    const cancelImageUpload = () => {
-      showImageUpload.value = false
-      selectedImages.value = []
+      
+      // 선택된 이미지들을 바로 attachedImages에 추가
+      if (newImages.length > 0) {
+        attachedImages.value.push(...newImages)
+      }
+      
+      // 파일 입력 초기화
       if (imageInput.value) {
         imageInput.value.value = ''
       }
     }
 
-    // 이미지 업로드 확인
-    const confirmImageUpload = () => {
-      if (selectedImages.value.length > 0) {
-        // 공통 이미지 배열에 새 이미지 추가
-        attachedImages.value.push(...selectedImages.value)
-        
-        // 상태 초기화
-        showImageUpload.value = false
-        selectedImages.value = []
-        if (imageInput.value) {
-          imageInput.value.value = ''
-        }
+    // 파일 입력 트리거
+    const triggerFileInput = () => {
+      if (imageInput.value) {
+        imageInput.value.click()
       }
     }
 
@@ -799,14 +763,14 @@ export default {
       if (!selectedDiary.value) return
       if (!visitedCourseId) {
         error.value = '방문 코스 ID가 없습니다. 다시 시작해주세요.'
-        console.error('visitedCourseId가 없습니다:', visitedCourseId)
         return
       }
+      
+      isSavingDiary.value = true
       
       try {
         // 실제 API 호출
         const imageFiles = attachedImages.value.map(img => img.file)
-        console.log('일지 저장 시도 - visitedCourseId:', visitedCourseId)
         const response = await saveDiary(diaryTitle.value, selectedDiary.value.content, imageFiles, visitedCourseId)
         
         if (response.status === 'CREATED') {
@@ -816,15 +780,13 @@ export default {
             ? `일지와 ${imageCount}장의 사진이 성공적으로 저장되었습니다!`
             : '일지가 성공적으로 저장되었습니다!'
           
-          console.log('일지 저장 성공! diaryId:', response.data?.diaryId)
           alert(message)
-          router.push('/')
-        } else {
-          console.log('예상치 못한 응답 상태:', response.status)
+          router.push('/diaries')
         }
       } catch (err) {
         error.value = err.message || '일지 저장에 실패했습니다.'
-        console.error('Error saving diary:', err)
+      } finally {
+        isSavingDiary.value = false
       }
     }
 
@@ -847,6 +809,7 @@ export default {
       isCompleted,
       isProcessing,
       isGeneratingDiary,
+      isSavingDiary,
       userInput,
       chatMessages,
       chatWindow,
@@ -859,9 +822,7 @@ export default {
       showRegenerateForm,
       feedback,
       isRegenerating,
-      showImageUpload,
       imageInput,
-      selectedImages,
       attachedImages,
       goBack,
       startChat,
@@ -876,8 +837,7 @@ export default {
       getCompletionTitle,
       getCompletionMessage,
       handleImageUpload,
-      cancelImageUpload,
-      confirmImageUpload,
+      triggerFileInput,
       removeImage,
       // 제목/내용 수정 관련 함수들
       isEditingTitle,
@@ -906,7 +866,7 @@ export default {
 .diary-create-chat-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 26px;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -921,7 +881,7 @@ export default {
 .back-btn {
   background: none;
   border: none;
-  color: #007bff;
+  color: #303E69;
   font-size: 1rem;
   cursor: pointer;
   padding: 10px 0;
@@ -930,7 +890,7 @@ export default {
 }
 
 .back-btn:hover {
-  color: #0056b3;
+  color: #1e2a4a;
 }
 
 .chat-header h1 {
@@ -959,7 +919,7 @@ export default {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
@@ -968,6 +928,100 @@ export default {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* 일지 재생성 중 오버레이 */
+.regeneration-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 12px;
+}
+
+.regeneration-spinner {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+}
+
+.regeneration-spinner .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #ffc107;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+.regeneration-spinner p {
+  font-size: 1.1rem;
+  color: #333;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.regeneration-subtitle {
+  font-size: 0.9rem !important;
+  color: #666 !important;
+  font-weight: 400 !important;
+}
+
+/* 일지 저장 중 오버레이 */
+.saving-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 12px;
+}
+
+.saving-spinner {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+}
+
+.saving-spinner .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #28a745;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+.saving-spinner p {
+  font-size: 1.1rem;
+  color: #333;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.saving-subtitle {
+  font-size: 0.9rem !important;
+  color: #666 !important;
+  font-weight: 400 !important;
 }
 
 .error-icon, .completion-icon {
@@ -985,7 +1039,7 @@ export default {
 }
 
 .completion h3 {
-  color: #28a745;
+  color: #384F45;
 }
 
 .retry-btn {
@@ -1005,7 +1059,7 @@ export default {
 
 
 .view-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #384F45 0%, #2a3a32 100%);
   color: white;
   border: none;
   padding: 12px 30px;
@@ -1044,7 +1098,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 15px;
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #384F45 0%, #2a3a32 100%);
   color: white;
   padding: 20px 25px;
   border-radius: 12px;
@@ -1117,7 +1171,7 @@ export default {
 .completion-header h3 {
   margin-bottom: 10px;
   font-size: 1.5rem;
-  color: #28a745;
+  color: #384F45;
 }
 
 .completion-header p {
@@ -1175,7 +1229,7 @@ export default {
 .title-input {
   flex: 1;
   padding: 12px 16px;
-  border: 2px solid #3498db;
+  border: 2px solid #303E69;
   border-radius: 8px;
   font-size: 18px;
   font-weight: 500;
@@ -1183,7 +1237,7 @@ export default {
 
 .title-input:focus {
   outline: none;
-  border-color: #2980b9;
+  border-color: #1e2a4a;
 }
 
 .save-title-btn,
@@ -1197,12 +1251,12 @@ export default {
 }
 
 .save-title-btn {
-  background-color: #27ae60;
+  background-color: #384F45;
   color: white;
 }
 
 .save-title-btn:hover {
-  background-color: #229954;
+  background-color: #2a3a32;
 }
 
 .cancel-title-btn {
@@ -1245,13 +1299,13 @@ export default {
 }
 
 .tab-btn:hover {
-  border-color: #007bff;
-  color: #007bff;
+  border-color: #303E69;
+  color: #303E69;
 }
 
 .tab-btn.active {
-  background: #007bff;
-  border-color: #007bff;
+  background: #303E69;
+  border-color: #303E69;
   color: white;
 }
 
@@ -1270,13 +1324,15 @@ export default {
   flex: 1;
   padding: 30px;
   overflow-y: auto;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-content h2 {
   font-size: 1.8rem;
   color: #333;
   margin-bottom: 20px;
-  font-weight: 600;
+  font-weight: bold;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text {
@@ -1284,6 +1340,7 @@ export default {
   color: #555;
   font-size: 1rem;
   white-space: pre-wrap;
+  font-family: 'MaruBuri', serif;
 }
 
 .content-display {
@@ -1298,7 +1355,7 @@ export default {
   width: 100%;
   min-height: 300px;
   padding: 16px;
-  border: 2px solid #3498db;
+  border: 2px solid #303E69;
   border-radius: 8px;
   font-size: 1rem;
   line-height: 1.6;
@@ -1309,7 +1366,7 @@ export default {
 
 .content-input:focus {
   outline: none;
-  border-color: #2980b9;
+  border-color: #1e2a4a;
 }
 
 /* 액션 버튼 */
@@ -1358,12 +1415,12 @@ export default {
 }
 
 .save-content-btn {
-  background-color: #27ae60;
+  background-color: #384F45;
   color: white;
 }
 
 .save-content-btn:hover {
-  background-color: #229954;
+  background-color: #2a3a32;
 }
 
 .cancel-content-btn {
@@ -1380,9 +1437,16 @@ export default {
   color: #333;
 }
 
-.regenerate-btn:hover {
+.regenerate-btn:hover:not(:disabled) {
   background: #e0a800;
   transform: translateY(-1px);
+}
+
+.regenerate-btn:disabled {
+  background: #6c757d;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .image-btn {
@@ -1396,13 +1460,19 @@ export default {
 }
 
 .save-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #384F45 0%, #2a3a32 100%);
   color: white;
 }
 
-.save-btn:hover {
+.save-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.save-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 
@@ -1423,8 +1493,12 @@ export default {
   font-weight: 600;
 }
 
-.add-image-btn {
-  background: #17a2b8;
+.image-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.image-action-btn {
   color: white;
   border: none;
   padding: 8px 16px;
@@ -1432,12 +1506,19 @@ export default {
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
 }
 
-.add-image-btn:hover {
-  background: #138496;
+.image-action-btn.add-btn {
+  background: #17a2b8;
 }
+
+.image-action-btn.add-btn:hover {
+  background: #138496;
+  transform: translateY(-1px);
+}
+
+
 
 .no-images-message {
   padding: 40px 30px;
@@ -1447,71 +1528,6 @@ export default {
 
 
 
-/* 이미지 업로드 폼 */
-.image-upload-form {
-  padding: 20px 30px;
-  background: #f8f9fa;
-  border-top: 1px solid #e9ecef;
-}
-
-.image-upload-form h4 {
-  margin-bottom: 15px;
-  color: #333;
-  font-size: 1.1rem;
-}
-
-.image-upload-area {
-  position: relative;
-  border: 2px dashed #dee2e6;
-  border-radius: 8px;
-  padding: 40px 20px;
-  text-align: center;
-  background: white;
-  transition: border-color 0.3s ease;
-  cursor: pointer;
-}
-
-.image-upload-area:hover {
-  border-color: #007bff;
-}
-
-.image-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.upload-placeholder {
-  pointer-events: none;
-}
-
-.upload-icon {
-  font-size: 3rem;
-  margin-bottom: 15px;
-  display: block;
-}
-
-.upload-placeholder p {
-  margin: 5px 0;
-  color: #666;
-  font-size: 1rem;
-}
-
-.upload-hint {
-  font-size: 0.9rem !important;
-  color: #999 !important;
-}
-
-.image-upload-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 15px;
-}
 
 /* 이미지 미리보기 */
 .image-preview {
@@ -1634,7 +1650,7 @@ export default {
 }
 
 .user-avatar {
-  background: #007bff;
+  background: #303E69;
   color: white;
 }
 
@@ -1646,7 +1662,7 @@ export default {
 }
 
 .message.user .message-text {
-  background: #007bff;
+  background: #303E69;
   color: white;
 }
 
@@ -1688,7 +1704,7 @@ export default {
 
 .message-input:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #303E69;
 }
 
 .message-input:disabled {
@@ -1697,7 +1713,7 @@ export default {
 }
 
 .send-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 12px 20px;
@@ -1710,7 +1726,7 @@ export default {
 }
 
 .send-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .send-btn:disabled {
@@ -1723,7 +1739,7 @@ export default {
 }
 
 .end-chat-btn {
-  background: #28a745;
+  background: #384F45;
   color: white;
   border: none;
   padding: 10px 16px;
@@ -1737,7 +1753,7 @@ export default {
 }
 
 .end-chat-btn:hover:not(:disabled) {
-  background: #1e7e34;
+  background: #2a3a32;
 }
 
 .end-chat-btn:disabled {
@@ -1863,6 +1879,16 @@ export default {
     text-align: center;
   }
   
+  .image-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .image-action-btn {
+    width: 100%;
+    padding: 10px 16px;
+  }
+  
   .no-images-message {
     padding: 30px 20px;
   }
@@ -1870,6 +1896,42 @@ export default {
   .image-grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 10px;
+  }
+  
+  .regeneration-spinner {
+    padding: 30px 20px;
+    max-width: 250px;
+  }
+  
+  .regeneration-spinner .spinner {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .regeneration-spinner p {
+    font-size: 1rem;
+  }
+  
+  .regeneration-subtitle {
+    font-size: 0.85rem !important;
+  }
+  
+  .saving-spinner {
+    padding: 30px 20px;
+    max-width: 250px;
+  }
+  
+  .saving-spinner .spinner {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .saving-spinner p {
+    font-size: 1rem;
+  }
+  
+  .saving-subtitle {
+    font-size: 0.85rem !important;
   }
 }
 
@@ -1946,6 +2008,42 @@ export default {
   
   .no-images-message p {
     font-size: 0.9rem;
+  }
+  
+  .regeneration-spinner {
+    padding: 25px 15px;
+    max-width: 200px;
+  }
+  
+  .regeneration-spinner .spinner {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .regeneration-spinner p {
+    font-size: 0.9rem;
+  }
+  
+  .regeneration-subtitle {
+    font-size: 0.8rem !important;
+  }
+  
+  .saving-spinner {
+    padding: 25px 15px;
+    max-width: 200px;
+  }
+  
+  .saving-spinner .spinner {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .saving-spinner p {
+    font-size: 0.9rem;
+  }
+  
+  .saving-subtitle {
+    font-size: 0.8rem !important;
   }
 }
 
@@ -2029,7 +2127,7 @@ export default {
 }
 
 .message-text :deep(a) {
-  color: #007bff;
+  color: #303E69;
   text-decoration: none;
 }
 
@@ -2045,8 +2143,9 @@ export default {
 .diary-text :deep(h5),
 .diary-text :deep(h6) {
   margin: 16px 0 8px 0;
-  font-weight: 600;
+  font-weight: bold;
   color: #333;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(h1) { font-size: 1.5rem; }
@@ -2059,6 +2158,7 @@ export default {
 .diary-text :deep(p) {
   margin: 8px 0;
   line-height: 1.6;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(ul),
@@ -2070,15 +2170,18 @@ export default {
 .diary-text :deep(li) {
   margin: 4px 0;
   line-height: 1.5;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(strong) {
-  font-weight: 600;
+  font-weight: bold;
   color: #333;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(em) {
   font-style: italic;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(code) {
@@ -2108,6 +2211,7 @@ export default {
   padding-left: 16px;
   color: #666;
   font-style: italic;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(hr) {
@@ -2117,7 +2221,7 @@ export default {
 }
 
 .diary-text :deep(a) {
-  color: #007bff;
+  color: #303E69;
   text-decoration: none;
 }
 
@@ -2203,7 +2307,7 @@ export default {
   width: 50px;
   height: 50px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;

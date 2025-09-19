@@ -1,36 +1,42 @@
 <template>
-  <div style="display: flex; gap: 32px; align-items: flex-start;">
-    <div style="flex:1; min-width: 350px; max-width: 500px;">
-      <KakaoMap
-        :pathPoints="selectedCourse && courseDetail && courseDetail.coords ? courseDetail.coords : []"
-        :courseId="selectedCourse ? selectedCourse.id : 'all'"
-        :attractions="attractionsWithEndPoint"
-      />
-    </div>
-    <!-- 리스트/상세 영역 -->
-    <div style="flex:2; min-width: 350px;">
-      <div style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
+  <div class="course-search-container">
+    <!-- 페이지 헤더 -->
+    <div class="course-search-header">
+      <div class="header-title">
         <h1>코스검색</h1>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <label style="font-size:14px; color:#666;">정렬</label>
-          <select v-model="sortBy" @change="handleSortChange" style="padding:6px 8px; border:1px solid #dee2e6; border-radius:4px;">
-            <option value="createdAt">최신순</option>
-            <option value="rating,desc">별점 높은 순</option>
-            <option value="rating,asc">별점 낮은 순</option>
-          </select>
-          <button @click="showAttendance = true" style="padding:6px 10px; border:1px solid #dee2e6; border-radius:4px; background:#fff; cursor:pointer;">출석 모달</button>
-        </div>
+        <p class="header-subtitle">다양한 여행 코스를 검색하고 맞춤 코스를 추천 받아 보세요</p>
       </div>
+      <div class="header-controls">
+        <label style="font-size:14px; color:#666;">정렬</label>
+        <select v-model="sortBy" @change="handleSortChange" style="padding:6px 8px; border:1px solid #dee2e6; border-radius:4px;">
+          <option value="createdAt">최신순</option>
+          <option value="rating,desc">별점 높은 순</option>
+          <option value="rating,asc">별점 낮은 순</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="course-search-content">
+      <div class="map-section">
+        <KakaoMap
+          :pathPoints="selectedCourse && courseDetail && courseDetail.coords ? courseDetail.coords : []"
+          :courseId="selectedCourse ? selectedCourse.id : 'all'"
+          :attractions="attractionsWithEndPoint"
+        />
+      </div>
+      <!-- 리스트/상세 영역 -->
+      <div class="list-section">
       
       <!-- 로딩 상태 표시 -->
-      <div v-if="loading" style="text-align: center; padding: 20px;">
+      <div v-if="loading" class="loading">
+        <div class="loading-spinner"></div>
         <p>코스 데이터를 불러오는 중...</p>
       </div>
       
       <!-- 에러 상태 표시 -->
       <div v-else-if="error" style="text-align: center; padding: 20px; color: red;">
         <p>{{ error }}</p>
-        <button @click="loadCourses" style="margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        <button @click="loadCourses" style="margin-top: 10px; padding: 8px 16px; background: #303E69; color: white; border: none; border-radius: 4px; cursor: pointer;">
           다시 시도
         </button>
       </div>
@@ -68,8 +74,8 @@
           @page-changed="onPageChangeCustom"
         />
       </div>
+      </div>
     </div>
-    <AttendanceModel :visible="showAttendance" @close="showAttendance=false" />
   </div>
 </template>
 
@@ -81,10 +87,9 @@ import CourseMainTab from '../components/CourseMainTab.vue'
 import CourseCustomTab from '../components/CourseCustomTab.vue'
 import CourseRegionTab from '../components/CourseRegionTab.vue'
 import CourseAllTab from '../components/CourseAllTab.vue'
-import AttendanceModel from '../components/AttendanceModel.vue'
 import Pagination from '../components/pagination.vue'
 
-const selected = ref('custom')
+const selected = ref('main')
 const courses = ref([])
 const selectedCourse = ref(null)
 const courseDetail = ref(null)
@@ -92,11 +97,13 @@ const attractions = ref([])
 const loading = ref(false)
 const error = ref(null)
 const sortBy = ref('createdAt')
-const showAttendance = ref(false)
 const diseaseId = ref(1)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const totalPagesCustom = ref(1)
+// 요청 레이스 방지용 ID
+const mainRequestId = ref(0)
+const customRequestId = ref(0)
 
 // 데이터 정규화 함수
 function normalizeCourseData(rawData) {
@@ -124,6 +131,7 @@ async function loadCourses() {
   error.value = null
   
   try {
+    const rid = ++mainRequestId.value
     const response = await courseApi.getAllCourses(0, 500)
     
     let list
@@ -137,6 +145,7 @@ async function loadCourses() {
     // 간단 정렬(백 정렬 파라미터 준비 전까지 프런트에서 보조)
     if (sortBy.value === 'rating,desc') list.sort((a,b)=> (b.rating||0)-(a.rating||0))
     else if (sortBy.value === 'rating,asc') list.sort((a,b)=> (a.rating||0)-(b.rating||0))
+    if (selected.value !== 'main' || rid !== mainRequestId.value) return
     courses.value = list
     console.log('로드된 코스 수:', courses.value.length)
   } catch (err) {
@@ -144,7 +153,7 @@ async function loadCourses() {
     error.value = '코스 데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.'
     
   } finally {
-    loading.value = false
+    if (selected.value === 'main') loading.value = false
   }
 }
 
@@ -183,6 +192,7 @@ async function loadDiseaseCourses(pageArg = 1) {
     console.log('❌ 맞춤 탭이 아니므로 종료')
     return
   }
+  const rid = ++customRequestId.value
   currentPage.value = pageArg
   loading.value = true
   error.value = null
@@ -197,6 +207,7 @@ async function loadDiseaseCourses(pageArg = 1) {
     console.log('📡 API 응답:', res)
     const body = res?.data || res
     const list = Array.isArray(body) ? body : (body?.items || [])
+    if (selected.value !== 'custom' || rid !== customRequestId.value) return
     courses.value = normalizeCourseData(list)
     console.log('✅ 맞춤 코스 로드 완료, 개수:', courses.value.length)
     // 총 페이지 계산: 우선순위 totalPages -> totalElements/size -> length
@@ -212,7 +223,7 @@ async function loadDiseaseCourses(pageArg = 1) {
     console.error('❌ 맞춤(질병) 코스 로드 실패:', e)
     error.value = '맞춤 코스를 불러오는데 실패했습니다.'
   } finally {
-    loading.value = false
+    if (selected.value === 'custom') loading.value = false
   }
 }
 
@@ -239,8 +250,11 @@ watch(selected, (val) => {
   if (val === 'custom') {
     console.log('✅ 맞춤 탭 선택됨, loadDiseaseCourses 호출')
     loadDiseaseCourses(1)
+  } else {
+    console.log('✅ 일반 탭 선택됨, loadCourses 호출')
+    loadCourses()
   }
-}, { immediate: true })
+}, { immediate: false })
 </script>
 
 <style scoped>
@@ -259,14 +273,122 @@ button:hover {
 }
 
 button.active {
-  background: #007bff;
+  background: #303E69;
   color: white;
-  border-color: #007bff;
+  border-color: #303E69;
 }
 
 button:disabled {
   background: #6c757d;
   color: white;
   cursor: not-allowed;
+}
+
+/* 로딩 스피너 스타일 */
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #303E69;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 컨테이너 스타일 - 다른 페이지와 일치 */
+.course-search-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 26px;
+}
+
+/* 페이지 헤더 스타일 */
+.course-search-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+}
+
+.header-title {
+  flex: 1;
+}
+
+.course-search-header h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin: 0 0 10px 0;
+}
+
+.header-subtitle {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.course-search-content {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.map-section {
+  flex: 1;
+  min-width: 350px;
+  max-width: 500px;
+}
+
+.list-section {
+  flex: 2;
+  min-width: 350px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .course-search-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+  
+  .course-search-header h1 {
+    font-size: 2rem;
+  }
+  
+  .header-subtitle {
+    font-size: 1rem;
+  }
+  
+  .header-controls {
+    justify-content: center;
+  }
+  
+  .course-search-content {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .map-section,
+  .list-section {
+    min-width: auto;
+    max-width: none;
+  }
 }
 </style> 

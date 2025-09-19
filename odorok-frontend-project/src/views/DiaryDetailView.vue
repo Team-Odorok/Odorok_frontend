@@ -35,7 +35,6 @@
 
       <!-- 이미지 갤러리 -->
       <div v-if="diary.imgs && diary.imgs.length > 0" class="image-gallery">
-        <h3>여행 사진</h3>
         <div class="image-grid">
           <div 
             v-for="(image, index) in diary.imgs" 
@@ -50,9 +49,9 @@
 
       <!-- 일지 내용 -->
       <div class="diary-body">
-        <h3>일지 내용</h3>
-        <div class="content-text">
-          {{ diary.content }}
+        <div class="content-card">
+          <div class="content-text" v-html="convertMarkdownToHtml(diary.content)">
+          </div>
         </div>
       </div>
 
@@ -93,6 +92,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getDiaryDetail, deleteDiary as deleteDiaryAPI } from '@/services/diaryService'
+import { marked } from 'marked'
 
 export default {
   name: 'DiaryDetailView',
@@ -215,6 +215,12 @@ export default {
       }
     }
 
+    // 마크다운을 HTML로 변환
+    const convertMarkdownToHtml = (markdown) => {
+      if (!markdown) return ''
+      return marked(markdown)
+    }
+
     onMounted(() => {
       fetchDiaryDetail()
     })
@@ -233,7 +239,8 @@ export default {
       openImageModal,
       closeImageModal,
       prevImage,
-      nextImage
+      nextImage,
+      convertMarkdownToHtml
     }
   }
 }
@@ -339,10 +346,12 @@ export default {
   gap: 20px;
   font-size: 0.9rem;
   opacity: 0.9;
+  font-family: 'MaruBuri', serif;
 }
 
 .course-name {
   font-weight: 600;
+  font-family: 'MaruBuri', serif;
 }
 
 .image-gallery {
@@ -350,11 +359,6 @@ export default {
   border-bottom: 1px solid #e9ecef;
 }
 
-.image-gallery h3 {
-  margin-bottom: 20px;
-  color: #333;
-  font-size: 1.3rem;
-}
 
 .image-grid {
   display: grid;
@@ -383,10 +387,14 @@ export default {
   padding: 30px;
 }
 
-.diary-body h3 {
-  margin-bottom: 20px;
-  color: #333;
-  font-size: 1.3rem;
+.content-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin: 0 auto;
+  max-width: 800px;
+  border: 1px solid #e9ecef;
 }
 
 .content-text {
@@ -394,6 +402,105 @@ export default {
   color: #555;
   font-size: 1.1rem;
   white-space: pre-wrap;
+}
+
+/* 마크다운 스타일링 - 일반 텍스트와 일관된 여백 */
+.content-text h1,
+.content-text h2,
+.content-text h3,
+.content-text h4,
+.content-text h5,
+.content-text h6 {
+  color: #333;
+  margin: 0;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.8;
+}
+
+.content-text h1 {
+  font-size: 2rem;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 0.3em;
+  margin-bottom: 0.8em;
+}
+
+.content-text h2 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 0.2em;
+  margin-bottom: 0.6em;
+}
+
+.content-text h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.4em;
+}
+
+.content-text p {
+  margin: 0;
+  margin-bottom: 0.5em;
+  line-height: 1.8;
+}
+
+.content-text ul,
+.content-text ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.content-text li {
+  margin: 0;
+  margin-bottom: 0.2em;
+  line-height: 1.8;
+}
+
+.content-text blockquote {
+  border-left: 4px solid #007bff;
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: #666;
+  font-style: italic;
+  line-height: 1.8;
+}
+
+.content-text code {
+  background: #f8f9fa;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.content-text pre {
+  background: #f8f9fa;
+  padding: 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.content-text pre code {
+  background: none;
+  padding: 0;
+}
+
+.content-text a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.content-text a:hover {
+  text-decoration: underline;
+}
+
+.content-text strong {
+  font-weight: 600;
+  color: #333;
+}
+
+.content-text em {
+  font-style: italic;
 }
 
 .action-buttons {
@@ -530,6 +637,26 @@ export default {
   
   .edit-btn, .delete-btn {
     width: 100%;
+  }
+  
+  .content-card {
+    padding: 20px;
+    margin: 0 10px;
+  }
+  
+  .content-text h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.6em;
+  }
+  
+  .content-text h2 {
+    font-size: 1.3rem;
+    margin-bottom: 0.5em;
+  }
+  
+  .content-text h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.3em;
   }
 }
 

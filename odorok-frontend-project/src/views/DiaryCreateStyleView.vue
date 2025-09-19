@@ -114,6 +114,13 @@
               <p class="course-description">{{ getCourseDescription(course) }}</p>
             </div>
           </label>
+          
+          <!-- 방문한 코스가 없는 경우 안내 메시지 -->
+          <div v-if="visitedCourses.length === 0" class="no-courses-message">
+            <h3>방문한 코스가 없습니다</h3>
+            <p>더 이상 일지를 작성할 수 있는 코스가 없습니다.</p>
+            <p class="encouragement">새로운 코스를 완주해 보세요!</p>
+          </div>
         </div>
       </div>
 
@@ -184,7 +191,7 @@ export default {
 
     // 진행 가능 여부 확인
     const canProceed = computed(() => {
-      return selectedTone.value && selectedCourse.value !== null
+      return selectedTone.value && selectedCourse.value !== null && visitedCourses.value.length > 0
     })
 
     // 날짜 포맷팅
@@ -299,7 +306,7 @@ export default {
 .diary-create-style-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 26px;
 }
 
 .style-header {
@@ -310,7 +317,7 @@ export default {
 .back-btn {
   background: none;
   border: none;
-  color: #007bff;
+  color: #303E69;
   font-size: 1rem;
   cursor: pointer;
   padding: 10px 0;
@@ -319,7 +326,7 @@ export default {
 }
 
 .back-btn:hover {
-  color: #0056b3;
+  color: #1e2a4a;
 }
 
 .style-header h1 {
@@ -343,7 +350,7 @@ export default {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
@@ -429,14 +436,14 @@ export default {
 }
 
 .tone-option:hover {
-  border-color: #007bff;
+  border-color: #303E69;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(48, 62, 105, 0.1);
 }
 
 .tone-option.selected {
-  border-color: #007bff;
-  background: #f8f9ff;
+  border-color: #303E69;
+  background: #f0f2ff;
 }
 
 .tone-option input[type="radio"] {
@@ -475,14 +482,14 @@ export default {
 }
 
 .emoticon-option:hover {
-  border-color: #007bff;
+  border-color: #303E69;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(48, 62, 105, 0.1);
 }
 
 .emoticon-option.selected {
-  border-color: #007bff;
-  background: #f8f9ff;
+  border-color: #303E69;
+  background: #f0f2ff;
 }
 
 .emoticon-option input[type="radio"] {
@@ -530,14 +537,14 @@ export default {
 }
 
 .course-option:hover {
-  border-color: #007bff;
+  border-color: #303E69;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(48, 62, 105, 0.1);
 }
 
 .course-option.selected {
-  border-color: #007bff;
-  background: #f8f9ff;
+  border-color: #303E69;
+  background: #f0f2ff;
 }
 
 .course-option input[type="radio"] {
@@ -552,7 +559,7 @@ export default {
 }
 
 .course-date {
-  color: #007bff;
+  color: #303E69;
   font-size: 0.9rem;
   margin-bottom: 8px;
   font-weight: 500;
@@ -565,6 +572,36 @@ export default {
   line-height: 1.4;
 }
 
+/* 방문한 코스가 없는 경우 안내 메시지 */
+.no-courses-message {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 12px;
+  color: #6c757d;
+}
+
+.no-courses-message h3 {
+  font-size: 1.3rem;
+  color: #495057;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.no-courses-message p {
+  font-size: 1rem;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.encouragement {
+  color: #303E69 !important;
+  font-weight: 600;
+  font-size: 1.1rem !important;
+  margin-top: 15px !important;
+}
+
 /* 액션 버튼 */
 .action-buttons {
   padding: 30px;
@@ -573,7 +610,7 @@ export default {
 }
 
 .next-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #384F45 0%, #2a3a32 100%);
   color: white;
   border: none;
   padding: 15px 40px;
@@ -621,6 +658,22 @@ export default {
     text-align: center;
     gap: 10px;
   }
+  
+  .no-courses-message {
+    padding: 30px 15px;
+  }
+  
+  .no-courses-message h3 {
+    font-size: 1.2rem;
+  }
+  
+  .no-courses-message p {
+    font-size: 0.9rem;
+  }
+  
+  .encouragement {
+    font-size: 1rem !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -636,6 +689,22 @@ export default {
   .emoticon-option,
   .course-option {
     padding: 15px;
+  }
+  
+  .no-courses-message {
+    padding: 25px 10px;
+  }
+  
+  .no-courses-message h3 {
+    font-size: 1.1rem;
+  }
+  
+  .no-courses-message p {
+    font-size: 0.85rem;
+  }
+  
+  .encouragement {
+    font-size: 0.95rem !important;
   }
 }
 </style> 

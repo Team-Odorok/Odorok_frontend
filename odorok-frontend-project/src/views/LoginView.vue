@@ -40,6 +40,21 @@
         </button>
       </form>
       
+      <!-- 소셜 로그인 섹션 -->
+      <div class="social-login">
+        <div class="divider">
+          <span>또는</span>
+        </div>
+        
+        <button 
+          @click="handleKakaoLogin"
+          class="kakao-login-btn"
+        >
+          <img src="/kakao-icon.png" alt="카카오톡" class="kakao-icon" />
+          카카오로 로그인
+        </button>
+      </div>
+      
       <div v-if="error" class="error-message">
         {{ error }}
       </div>
@@ -89,7 +104,9 @@ export default {
       try {
         await login(username.value, password.value)
         console.log('로그인 성공! 메인 페이지로 이동합니다.')
-        router.push('/diaries')
+        // 네비게이션 바에 로그인 상태 변화 알림
+        window.dispatchEvent(new CustomEvent('loginStateChanged'))
+        router.push('/')
       } catch (err) {
         console.error('로그인 에러:', err)
         
@@ -112,6 +129,12 @@ export default {
       }
     }
     
+    const handleKakaoLogin = () => {
+      console.log('카카오 로그인 버튼 클릭됨')
+      // 카카오 로그인 URL로 리다이렉트
+      window.location.href = 'https://odorok.duckdns.org/api/auth/oauth2/login/kakao'
+    }
+    
     
     return {
       username,
@@ -119,7 +142,8 @@ export default {
       loading,
       error,
       swaggerUrl,
-      handleLogin
+      handleLogin,
+      handleKakaoLogin
     }
   }
 }
@@ -276,5 +300,60 @@ export default {
 
 .signup-link a:hover {
   text-decoration: underline;
+}
+
+/* 소셜 로그인 스타일 */
+.social-login {
+  margin-top: 30px;
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e1e5e9;
+}
+
+.divider span {
+  background: white;
+  padding: 0 15px;
+  color: #666;
+  font-size: 14px;
+}
+
+.kakao-login-btn {
+  width: 100%;
+  background: #FEE500;
+  color: #000;
+  border: none;
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: background-color 0.3s;
+}
+
+.kakao-login-btn:hover {
+  background: #FDD835;
+}
+
+.kakao-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
 }
 </style> 

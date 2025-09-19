@@ -2,6 +2,7 @@
   <div class="article-list">
     <!-- 로딩 상태 -->
     <div v-if="loading" class="loading">
+      <div class="loading-spinner"></div>
       <p>게시글을 불러오는 중...</p>
     </div>
     
@@ -70,6 +71,21 @@ export default {
   color: #666;
 }
 
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #303E69;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .error {
   color: #e74c3c;
 }
@@ -77,7 +93,7 @@ export default {
 .retry-button {
   margin-top: 10px;
   padding: 8px 16px;
-  background: #3498db;
+  background: #303E69;
   color: white;
   border: none;
   border-radius: 4px;
@@ -85,7 +101,7 @@ export default {
 }
 
 .retry-button:hover {
-  background: #2980b9;
+  background: #1e2a4a;
 }
 
 .articles {

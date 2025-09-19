@@ -2,44 +2,45 @@
   <div class="diary-list-container">
     <div class="diary-header">
       <h1>나의 오도록</h1>
-      <p class="diary-subtitle">여행 일지 목록</p>
+      <p class="diary-subtitle">소중한 순간들이 담긴 나만의 여행 이야기를 만들어 드릴게요</p>
     </div>
 
-    <!-- 연도 선택 드롭다운 -->
-    <div class="year-selector">
-      <label for="yearSelect">연도 선택:</label>
-      <select 
-        id="yearSelect" 
-        v-model="selectedYear" 
-        @change="onYearChange"
-        class="year-dropdown"
-      >
-        <option value="">전체 연도</option>
-        <option 
-          v-for="year in availableYears" 
-          :key="year" 
-          :value="year"
+    <!-- 필터 및 액션 섹션 -->
+    <div class="filter-action-section">
+      <div class="year-selector">
+        <label for="yearSelect">연도 선택:</label>
+        <select 
+          id="yearSelect" 
+          v-model="selectedYear" 
+          @change="onYearChange"
+          class="year-dropdown"
         >
-          {{ year }}년
-        </option>
-      </select>
-    </div>
-
-    <!-- 일지 생성 버튼 -->
-    <div class="create-diary-section">
-      <button 
-        @click="createDiary" 
-        :disabled="creatingDiary"
-        class="create-diary-btn"
-      >
-        {{ creatingDiary ? '권한 확인 중...' : '✏️ 새 일지 작성' }}
-      </button>
-      <button 
-        @click="showPurchaseModal = true"
-        class="purchase-btn"
-      >
-        💳 일지 생성권 구매
-      </button>
+          <option value="">전체 연도</option>
+          <option 
+            v-for="year in availableYears" 
+            :key="year" 
+            :value="year"
+          >
+            {{ year }}년
+          </option>
+        </select>
+      </div>
+      
+      <div class="action-buttons">
+        <button 
+          @click="createDiary" 
+          :disabled="creatingDiary"
+          class="create-diary-btn"
+        >
+          {{ creatingDiary ? '권한 확인 중...' : '새 일지 작성' }}
+        </button>
+        <button 
+          @click="showPurchaseModal = true"
+          class="purchase-btn"
+        >
+          일지 생성권 구매
+        </button>
+      </div>
     </div>
 
     <!-- 로딩 상태 -->
@@ -70,7 +71,7 @@
             <div class="month-summary-card" @click="viewMonthSummary(monthGroup)">
               <div class="summary-content">
                 <div class="summary-header">
-                  <h3>{{ monthGroup.year }}년 {{ monthGroup.month }}월</h3>
+                  <h3>{{ monthGroup.year }}년<br>{{ monthGroup.month }}월의 오도록</h3>
                   <span class="diary-count">{{ monthGroup.diaries.length }}개의 일지</span>
                 </div>
                 <div class="summary-preview">
@@ -116,7 +117,7 @@
         :disabled="currentPage === 1"
         class="page-btn prev-btn"
       >
-        ‹ 이전
+        이전
       </button>
       
       <div class="page-info">
@@ -130,7 +131,7 @@
         :disabled="currentPage === totalPages"
         class="page-btn next-btn"
       >
-        다음 ›
+        다음
       </button>
     </div>
 
@@ -152,7 +153,6 @@
 
           <!-- 이미지 갤러리 -->
           <div v-if="selectedDiary.imgs && selectedDiary.imgs.length > 0" class="image-gallery">
-            <h3>여행 사진</h3>
             <div class="image-grid">
               <div 
                 v-for="(image, index) in selectedDiary.imgs" 
@@ -167,9 +167,9 @@
 
           <!-- 일지 내용 -->
           <div class="diary-body">
-            <h3>일지 내용</h3>
-            <div class="content-text">
-              {{ selectedDiary.content }}
+            <div class="content-card">
+              <div class="content-text" v-html="convertMarkdownToHtml(selectedDiary.content)">
+              </div>
             </div>
           </div>
 
@@ -182,7 +182,7 @@
         <!-- 월별 합본 모달 -->
         <div v-if="selectedMonthGroup" class="month-summary-modal">
           <div class="month-header">
-            <h1>{{ selectedMonthGroup.year }}년 {{ selectedMonthGroup.month }}월</h1>
+            <h1>{{ selectedMonthGroup.year }}년 {{ selectedMonthGroup.month }}월의 오도록</h1>
             <p>{{ selectedMonthGroup.diaries.length }}개의 일지</p>
           </div>
 
@@ -200,7 +200,6 @@
 
               <!-- 이미지 갤러리 -->
               <div v-if="currentMonthDiary.imgs && currentMonthDiary.imgs.length > 0" class="image-gallery">
-                <h3>여행 사진</h3>
                 <div class="image-grid">
                   <div 
                     v-for="(image, index) in currentMonthDiary.imgs" 
@@ -215,9 +214,9 @@
 
               <!-- 일지 내용 -->
               <div class="diary-body">
-                <h3>일지 내용</h3>
-                <div class="content-text">
-                  {{ currentMonthDiary.content }}
+                <div class="content-card">
+                  <div class="content-text" v-html="convertMarkdownToHtml(currentMonthDiary.content)">
+                  </div>
                 </div>
               </div>
 
@@ -235,7 +234,7 @@
                 :disabled="currentMonthDiaryIndex === 0"
                 class="month-page-btn"
               >
-                ‹ 이전
+                이전
               </button>
               
               <div class="month-page-info">
@@ -249,7 +248,7 @@
                 :disabled="currentMonthDiaryIndex === selectedMonthGroup.diaries.length - 1"
                 class="month-page-btn"
               >
-                다음 ›
+                다음
               </button>
             </div>
           </div>
@@ -331,6 +330,7 @@ import { useRouter } from 'vue-router'
 import DiaryCard from '@/components/DiaryCard.vue'
 import Toast from '@/components/Toast.vue'
 import { getDiaryList, getDiaryDetail, getDiaryPermissions, deleteDiary as deleteDiaryAPI, purchaseDiaryCreateItems } from '@/services/diaryService'
+import { marked } from 'marked'
 
 export default {
   name: 'DiaryListView',
@@ -681,21 +681,20 @@ export default {
       }
     }
 
+    // 마크다운을 HTML로 변환
+    const convertMarkdownToHtml = (markdown) => {
+      if (!markdown) return ''
+      return marked(markdown)
+    }
+
 
 
     const deleteDiary = async () => {
-      console.log('=== 일지 삭제 디버깅 (ListView) ===')
-      console.log('selectedDiary.value:', selectedDiary.value)
-      console.log('selectedDiary.value?.data:', selectedDiary.value?.data)
-      console.log('selectedDiary.value?.data?.id:', selectedDiary.value?.data?.id)
-      console.log('selectedDiary.value?.data?.diaryId:', selectedDiary.value?.data?.diaryId)
-      
       // API 응답 구조에 맞게 data 필드에서 diaryId 찾기
       const diaryData = selectedDiary.value?.data || selectedDiary.value
       const diaryId = diaryData?.id || diaryData?.diaryId
       
       if (!diaryId) {
-        console.error('일지 ID를 찾을 수 없습니다.')
         alert('삭제할 일지 정보가 없습니다.')
         return
       }
@@ -705,7 +704,6 @@ export default {
       
       if (confirm(confirmMessage)) {
         try {
-          console.log('일지 삭제 시도 - diaryId:', diaryId)
           await deleteDiaryAPI(diaryId)
           
           // 삭제 성공 시 모달 닫고 목록 새로고침
@@ -845,7 +843,9 @@ export default {
       purchaseQuantity,
       purchasing,
       closePurchaseModal,
-      confirmPurchase
+      confirmPurchase,
+      // 마크다운 변환
+      convertMarkdownToHtml
     }
   }
 }
@@ -855,11 +855,11 @@ export default {
 .diary-list-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 26px;
 }
 
 .diary-header {
-  text-align: center;
+  text-align: left;
   margin-bottom: 40px;
 }
 
@@ -875,12 +875,24 @@ export default {
   margin: 0;
 }
 
+/* 필터 및 액션 섹션 */
+.filter-action-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 20px;
+}
+
 .year-selector {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 30px;
   gap: 15px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 20px;
 }
 
 .year-selector label {
@@ -905,20 +917,28 @@ export default {
   min-width: 140px;
 }
 
+.year-dropdown:hover {
+  border-color: #303E69;
+}
+
 .year-dropdown:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #303E69;
 }
 
-.create-diary-section {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-bottom: 30px;
+.year-dropdown option:hover {
+  background-color: #e9ecef;
+  color: #333;
 }
+
+.year-dropdown option:checked {
+  background-color: #e9ecef;
+  color: #333;
+}
+
 
 .create-diary-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: #384F45;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -931,7 +951,7 @@ export default {
 
 .create-diary-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  box-shadow: 0 4px 15px rgba(56, 79, 69, 0.3);
 }
 
 .create-diary-btn:disabled {
@@ -950,7 +970,7 @@ export default {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
@@ -998,20 +1018,20 @@ export default {
   color: #333;
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 1px solid #ADC8B7;
 }
 
 .month-summary-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #B96664 0%, #41687A 100%);
   color: white;
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  height: 200px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-height: 200px;
 }
 
 .month-summary-card:hover {
@@ -1023,17 +1043,24 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
 }
 
 .summary-header {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
 .summary-header h3 {
   font-size: 1.2rem;
   margin-bottom: 5px;
-  font-weight: 600;
+  font-weight: bold;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-count {
@@ -1050,7 +1077,7 @@ export default {
 
 .book-preview {
   width: 100%;
-  max-width: 120px;
+  max-width: 180px;
 }
 
 .book-page {
@@ -1090,7 +1117,7 @@ export default {
 }
 
 .month-page-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -1101,7 +1128,7 @@ export default {
 }
 
 .month-page-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .month-page-btn:disabled {
@@ -1119,7 +1146,7 @@ export default {
 }
 
 .current-month-page {
-  color: #007bff;
+  color: #303E69;
 }
 
 .month-page-separator {
@@ -1159,10 +1186,12 @@ export default {
 
 .current-diary-detail {
   margin-bottom: 30px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .current-diary-detail .diary-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #B96664 0%, #41687A 100%);
   color: white;
   padding: 25px;
   border-radius: 8px;
@@ -1172,8 +1201,9 @@ export default {
 .current-diary-detail .diary-title {
   font-size: 2rem;
   margin-bottom: 15px;
-  font-weight: 600;
+  font-weight: bold;
   text-align: left;
+  font-family: 'MaruBuri', serif;
 }
 
 .current-diary-detail .diary-meta {
@@ -1182,10 +1212,12 @@ export default {
   gap: 20px;
   font-size: 0.9rem;
   opacity: 0.9;
+  font-family: 'MaruBuri', serif;
 }
 
 .current-diary-detail .course-name {
   font-weight: 600;
+  font-family: 'MaruBuri', serif;
 }
 
 .current-diary-detail .image-gallery {
@@ -1231,11 +1263,121 @@ export default {
   font-size: 1.2rem;
 }
 
+.current-diary-detail .content-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+  margin: 0 auto;
+  max-width: 700px;
+  border: 1px solid #e9ecef;
+}
+
 .current-diary-detail .content-text {
   line-height: 1.8;
   color: #555;
   font-size: 1rem;
   white-space: pre-wrap;
+  font-family: 'MaruBuri', serif;
+}
+
+/* 월별 합본 모달 마크다운 스타일링 - 일반 텍스트와 일관된 여백 */
+.current-diary-detail .content-text h1,
+.current-diary-detail .content-text h2,
+.current-diary-detail .content-text h3,
+.current-diary-detail .content-text h4,
+.current-diary-detail .content-text h5,
+.current-diary-detail .content-text h6 {
+  color: #333;
+  margin: 0;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.8;
+}
+
+.current-diary-detail .content-text h1 {
+  font-size: 1.8rem;
+  border-bottom: 2px solid #303E69;
+  padding-bottom: 0.3em;
+  margin-bottom: 0.8em;
+}
+
+.current-diary-detail .content-text h2 {
+  font-size: 1.4rem;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 0.2em;
+  margin-bottom: 0.6em;
+}
+
+.current-diary-detail .content-text h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.4em;
+}
+
+.current-diary-detail .content-text p {
+  margin: 0;
+  margin-bottom: 0.5em;
+  line-height: 1.8;
+}
+
+.current-diary-detail .content-text ul,
+.current-diary-detail .content-text ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.current-diary-detail .content-text li {
+  margin: 0;
+  margin-bottom: 0.2em;
+  line-height: 1.8;
+}
+
+.current-diary-detail .content-text blockquote {
+  border-left: 4px solid #303E69;
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: #666;
+  font-style: italic;
+  line-height: 1.8;
+}
+
+.current-diary-detail .content-text code {
+  background: #f8f9fa;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.current-diary-detail .content-text pre {
+  background: #f8f9fa;
+  padding: 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.current-diary-detail .content-text pre code {
+  background: none;
+  padding: 0;
+}
+
+.current-diary-detail .content-text a {
+  color: #303E69;
+  text-decoration: none;
+}
+
+.current-diary-detail .content-text a:hover {
+  text-decoration: underline;
+}
+
+.current-diary-detail .content-text strong {
+  font-weight: 600;
+  color: #333;
+}
+
+.current-diary-detail .content-text em {
+  font-style: italic;
 }
 
 .current-diary-detail .action-buttons {
@@ -1254,12 +1396,12 @@ export default {
 }
 
 .current-diary-detail .edit-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
 }
 
 .current-diary-detail .edit-btn:hover {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .current-diary-detail .delete-btn {
@@ -1299,7 +1441,7 @@ export default {
 }
 
 .create-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -1310,7 +1452,7 @@ export default {
 }
 
 .create-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .create-btn:disabled {
@@ -1329,7 +1471,7 @@ export default {
 }
 
 .page-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -1340,7 +1482,7 @@ export default {
 }
 
 .page-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .page-btn:disabled {
@@ -1358,7 +1500,7 @@ export default {
 }
 
 .current-page {
-  color: #007bff;
+  color: #303E69;
 }
 
 .page-separator {
@@ -1388,9 +1530,11 @@ export default {
   border-radius: 12px;
   max-width: 90%;
   max-height: 90%;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
   width: 800px;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-close {
@@ -1423,10 +1567,12 @@ export default {
 /* 일지 상세 모달 */
 .diary-detail {
   padding: 30px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .diary-detail .diary-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #B96664 0%, #41687A 100%);
   color: white;
   padding: 25px;
   border-radius: 8px;
@@ -1436,8 +1582,9 @@ export default {
 .diary-detail .diary-title {
   font-size: 2rem;
   margin-bottom: 15px;
-  font-weight: 600;
+  font-weight: bold;
   text-align: left;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-detail .diary-meta {
@@ -1446,10 +1593,12 @@ export default {
   gap: 20px;
   font-size: 0.9rem;
   opacity: 0.9;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-detail .course-name {
   font-weight: 600;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-detail .image-gallery {
@@ -1495,11 +1644,121 @@ export default {
   font-size: 1.2rem;
 }
 
+.diary-detail .content-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+  margin: 0 auto;
+  max-width: 700px;
+  border: 1px solid #e9ecef;
+}
+
 .diary-detail .content-text {
   line-height: 1.8;
   color: #555;
   font-size: 1rem;
   white-space: pre-wrap;
+  font-family: 'MaruBuri', serif;
+}
+
+/* 마크다운 스타일링 - 일반 텍스트와 일관된 여백 */
+.diary-detail .content-text h1,
+.diary-detail .content-text h2,
+.diary-detail .content-text h3,
+.diary-detail .content-text h4,
+.diary-detail .content-text h5,
+.diary-detail .content-text h6 {
+  color: #333;
+  margin: 0;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.8;
+}
+
+.diary-detail .content-text h1 {
+  font-size: 1.8rem;
+  border-bottom: 2px solid #303E69;
+  padding-bottom: 0.3em;
+  margin-bottom: 0.8em;
+}
+
+.diary-detail .content-text h2 {
+  font-size: 1.4rem;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 0.2em;
+  margin-bottom: 0.6em;
+}
+
+.diary-detail .content-text h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.4em;
+}
+
+.diary-detail .content-text p {
+  margin: 0;
+  margin-bottom: 0.5em;
+  line-height: 1.8;
+}
+
+.diary-detail .content-text ul,
+.diary-detail .content-text ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.diary-detail .content-text li {
+  margin: 0;
+  margin-bottom: 0.2em;
+  line-height: 1.8;
+}
+
+.diary-detail .content-text blockquote {
+  border-left: 4px solid #303E69;
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: #666;
+  font-style: italic;
+  line-height: 1.8;
+}
+
+.diary-detail .content-text code {
+  background: #f8f9fa;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.diary-detail .content-text pre {
+  background: #f8f9fa;
+  padding: 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.diary-detail .content-text pre code {
+  background: none;
+  padding: 0;
+}
+
+.diary-detail .content-text a {
+  color: #303E69;
+  text-decoration: none;
+}
+
+.diary-detail .content-text a:hover {
+  text-decoration: underline;
+}
+
+.diary-detail .content-text strong {
+  font-weight: 600;
+  color: #333;
+}
+
+.diary-detail .content-text em {
+  font-style: italic;
 }
 
 .diary-detail .action-buttons {
@@ -1518,12 +1777,12 @@ export default {
 }
 
 .diary-detail .edit-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
 }
 
 .diary-detail .edit-btn:hover {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .diary-detail .delete-btn {
@@ -1620,9 +1879,18 @@ export default {
     font-size: 2rem;
   }
   
-  .year-selector {
+  .filter-action-section {
     flex-direction: column;
-    gap: 10px;
+    align-items: stretch;
+    gap: 15px;
+  }
+  
+  .year-selector {
+    justify-content: center;
+  }
+  
+  .action-buttons {
+    justify-content: center;
   }
   
   .month-title {
@@ -1647,6 +1915,30 @@ export default {
   .diary-modal .modal-content {
     width: 95%;
     max-height: 95%;
+  }
+  
+  .diary-detail .content-card,
+  .current-diary-detail .content-card {
+    padding: 20px;
+    margin: 0 10px;
+  }
+  
+  .diary-detail .content-text h1,
+  .current-diary-detail .content-text h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.6em;
+  }
+  
+  .diary-detail .content-text h2,
+  .current-diary-detail .content-text h2 {
+    font-size: 1.3rem;
+    margin-bottom: 0.5em;
+  }
+  
+  .diary-detail .content-text h3,
+  .current-diary-detail .content-text h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.3em;
   }
   
   .diary-book {
@@ -1684,7 +1976,7 @@ export default {
   
   .month-summary-card {
     padding: 15px;
-    height: 180px;
+    min-height: 180px;
   }
   
   .summary-header h3 {
@@ -1703,7 +1995,7 @@ export default {
 
 /* 구매 버튼 스타일 */
 .purchase-btn {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background: #303E69;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -1716,7 +2008,7 @@ export default {
 
 .purchase-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(48, 62, 105, 0.3);
 }
 
 .purchase-btn:active {
@@ -1803,7 +2095,7 @@ export default {
 
 .quantity-dropdown:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #303E69;
 }
 
 .purchase-summary {
@@ -1821,7 +2113,7 @@ export default {
 }
 
 .purchase-summary strong {
-  color: #007bff;
+  color: #303E69;
   font-size: 1.2rem;
 }
 
@@ -1853,7 +2145,7 @@ export default {
 }
 
 .confirm-purchase-btn {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background: linear-gradient(135deg, #303E69 0%, #1e2a4a 100%);
   color: white;
 }
 

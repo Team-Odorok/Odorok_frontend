@@ -94,8 +94,8 @@ export default {
 
 .page-button:hover:not(:disabled) {
   background: #f8f9fa;
-  border-color: #3498db;
-  color: #3498db;
+  border-color: #303E69;
+  color: #303E69;
 }
 
 .page-button:disabled {
@@ -121,13 +121,13 @@ export default {
 
 .page-number:hover {
   background: #f8f9fa;
-  border-color: #3498db;
-  color: #3498db;
+  border-color: #303E69;
+  color: #303E69;
 }
 
 .page-number.active {
-  background: #3498db;
-  border-color: #3498db;
+  background: #303E69;
+  border-color: #303E69;
   color: white;
 }
 </style>

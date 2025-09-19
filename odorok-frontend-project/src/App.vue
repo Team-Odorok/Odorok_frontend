@@ -1,5 +1,79 @@
 <template>
-  <RouterView />
+  <div class="app">
+    <NavigationBar />
+    <main class="main-content">
+      <RouterView />
+    </main>
+  </div>
+</template>
+
+<script setup>
+import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { onMounted } from 'vue'
+import NavigationBar from './components/NavigationBar.vue'
+import { handleKakaoLoginCallback } from './services/authService'
+
+const router = useRouter()
+
+// 앱 시작 시 카카오 로그인 콜백 처리
+onMounted(async () => {
+  const isKakaoLoginSuccess = await handleKakaoLoginCallback()
+  if (isKakaoLoginSuccess) {
+    // 카카오 로그인 성공 시 메인 페이지로 이동
+    router.push('/')
+    // 네비게이션 바에 로그인 상태 변화 알림
+    window.dispatchEvent(new CustomEvent('loginStateChanged'))
+  }
+})
+</script>
+
+
+<style>
+/* 전역 CSS 리셋 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'NanumBarunGothicYetHangul', sans-serif;
+  font-weight: 500;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  font-family: 'NanumBarunGothicYetHangul', sans-serif;
+  font-weight: 500;
+  background-color: #B96664;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: 'NanumBarunGothicYetHangul', sans-serif;
+  font-weight: 500;
+  background-color: #fff9f0;
+}
+</style>
+
+<style scoped>
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding-top: 80px; /* 네비게이션 바 높이만큼 패딩 추가 */
+}
+
+/* 아래 기태 작업물 주석 처리 */
+  /* <RouterView />
   
   <!-- 로그인 상태일 때만 표시되는 버튼들 -->
   <div v-if="isUserLoggedIn" class="floating-buttons">
@@ -110,14 +184,17 @@ onMounted(() => {
 </script>
 
 
-<style scoped>
+<style scoped> */
 
 .logo {
   display: block;
   margin: 0 auto 2rem;
 }
 
-nav {
+/* nav 스타일 제거 - NavigationBar 컴포넌트에서 관리 */
+
+/* 아래 기태 작업물 주석 처리 */
+/* nav {
   width: 100%;
   font-size: 12px;
   text-align: center;
@@ -139,7 +216,7 @@ nav a {
 }
 
 /* 플로팅 버튼 스타일 */
-.floating-buttons {
+/* .floating-buttons {
   position: fixed;
   right: 20px;
   bottom: 20px;
@@ -184,7 +261,7 @@ nav a {
 }
 
 /* 디버그 패널 스타일 */
-.debug-info {
+/* .debug-info {
   position: fixed;
   top: 20px;
   left: 20px;
@@ -247,6 +324,6 @@ nav a {
 .debug-btn:hover {
   background: #e67e22;
   transform: scale(1.1);
-}
+} */ 
 
 </style>

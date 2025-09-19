@@ -1,10 +1,10 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'https://odorok.duckdns.org/api'
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'https://odorok.duckdns.org/'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000, // 타임아웃을 30초로 증가
   withCredentials: true,
   headers: { 'Accept': 'application/json' }
 })
@@ -26,13 +26,23 @@ api.interceptors.request.use((config) => {
 const attendanceApi = {
   // 월 단위 출석 조회
   getMonthly: async (year, month) => {
-    const res = await api.get('/attendances', { params: { year, month } })
-    return res.data
+    try {
+      const res = await api.get('/attendances', { params: { year, month } })
+      return res.data
+    } catch (error) {
+      console.error('출석 월 조회 API 호출 실패:', error.message)
+      throw error
+    }
   },
   // 오늘 출석 생성
   createToday: async () => {
-    const res = await api.post('/attendances')
-    return res.data
+    try {
+      const res = await api.post('/attendances')
+      return res.data
+    } catch (error) {
+      console.error('출석 생성 API 호출 실패:', error.message)
+      throw error
+    }
   }
 }
 

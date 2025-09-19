@@ -1,7 +1,6 @@
 <template>
   <div class="write-button-container">
     <button @click="handleWriteClick" class="write-button">
-      <span class="icon">✏️</span>
       <span class="text">글쓰기</span>
     </button>
   </div>
@@ -32,21 +31,21 @@ export default {
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: #3498db;
+  background: #303E69;
   color: white;
   border: none;
   border-radius: 25px;
   cursor: pointer;
   font-size: 1rem;
   font-weight: 500;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+  box-shadow: 0 4px 12px rgba(48, 62, 105, 0.3);
   transition: all 0.2s ease;
 }
 
 .write-button:hover {
-  background: #2980b9;
+  background: #1e2a4a;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4);
+  box-shadow: 0 6px 16px rgba(48, 62, 105, 0.4);
 }
 
 .icon {

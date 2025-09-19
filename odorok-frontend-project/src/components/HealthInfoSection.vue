@@ -2,8 +2,8 @@
   <div class="health-info-section">
     <div class="health-card">
       <div class="health-header">
-        <h3>건강 정보</h3>
-        <button @click="$emit('edit-health')" class="edit-btn">상태 수정</button>
+        <h3>건강정보</h3>
+        <button @click="$emit('edit-health')" class="edit-btn">정보수정</button>
       </div>
       
       <div class="health-content" v-if="healthData?.data">
@@ -122,18 +122,19 @@ export default {
 }
 
 .edit-btn {
-  background: #3498db;
+  background: #303E69;
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 0.9rem;
   font-weight: 500;
   transition: background-color 0.3s;
 }
 
 .edit-btn:hover {
-  background: #2980b9;
+  background: #1e2a4a;
 }
 
 .health-content {

@@ -1,7 +1,7 @@
 <template>
   <div class="review-section">
     <div class="section-header">
-      <h3>⭐ 방문완료 후기</h3>
+      <h3>방문완료 후기</h3>
       <button 
         v-if="!loading" 
         @click="refreshReviews" 
@@ -603,7 +603,7 @@ export default {
 }
 
 .refresh-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -614,7 +614,7 @@ export default {
 }
 
 .refresh-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .refresh-btn:disabled {
@@ -631,7 +631,7 @@ export default {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
@@ -699,7 +699,7 @@ export default {
 .review-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #007bff;
+  border-color: #303E69;
 }
 
 .review-header {
@@ -761,12 +761,12 @@ export default {
 }
 
 .edit-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
 }
 
 .edit-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .delete-btn {
@@ -792,7 +792,7 @@ export default {
 }
 
 .page-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 8px 12px;
@@ -925,8 +925,8 @@ export default {
 
 .form-input:focus, .form-textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #303E69;
+  box-shadow: 0 0 0 3px rgba(48, 62, 105, 0.1);
 }
 
 .form-input.readonly {
@@ -1001,7 +1001,7 @@ export default {
 }
 
 .upload-btn:hover {
-  border-color: #667eea;
+  border-color: #303E69;
   background: #f0f2ff;
 }
 

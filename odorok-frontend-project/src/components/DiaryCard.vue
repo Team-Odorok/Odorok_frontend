@@ -2,7 +2,7 @@
   <div class="diary-card" @click="$emit('click')">
     <div class="card-image">
       <div class="image-placeholder">
-        <span class="placeholder-icon">📸</span>
+        <span class="placeholder-icon"></span>
       </div>
     </div>
     
@@ -46,15 +46,13 @@ export default {
       })
     }
 
-    // 날짜+시간 포맷팅 함수
+    // 날짜 포맷팅 함수 (시간 제외)
     const formatDateTime = (dateTimeString) => {
       const date = new Date(dateTimeString)
       return date.toLocaleDateString('ko-KR', {
         year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        month: 'long',
+        day: 'numeric'
       })
     }
 
@@ -80,12 +78,12 @@ export default {
 .diary-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  border-color: #007bff;
+  border-color: #B96664;
 }
 
 .card-image {
   height: 120px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #B96664 0%, #41687A 100%);
   position: relative;
   overflow: hidden;
 }
@@ -96,7 +94,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, #DDCDB5 0%, #ADC8B7 100%);
 }
 
 .placeholder-icon {
@@ -110,25 +108,31 @@ export default {
 
 .card-title {
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: bold;
+  font-family: 'MaruBuri', serif;
   color: #333;
   margin: 0 0 12px 0;
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  min-height: 2.6em; /* 2줄 높이 고정 (1.3 * 2) */
 }
 
 .card-dates {
   margin-bottom: 16px;
+  font-family: 'MaruBuri', serif;
 }
 
 .date-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
   font-size: 0.85rem;
+  flex-wrap: wrap;
+  font-family: 'MaruBuri', serif;
 }
 
 .date-item:last-child {
@@ -138,11 +142,16 @@ export default {
 .date-label {
   color: #6c757d;
   font-weight: 500;
+  margin-right: 8px;
+  flex-shrink: 0;
+  font-family: 'MaruBuri', serif;
 }
 
 .date-value {
   color: #495057;
   font-weight: 400;
+  word-break: keep-all;
+  font-family: 'MaruBuri', serif;
 }
 
 /* 카드 클릭으로 일지 상세 보기 가능 */
@@ -155,10 +164,16 @@ export default {
   
   .card-title {
     font-size: 1rem;
+    min-height: 2.6em; /* 2줄 높이 고정 */
   }
   
   .date-item {
     font-size: 0.8rem;
+    flex-wrap: wrap;
+  }
+  
+  .date-label {
+    margin-right: 6px;
   }
 }
 
@@ -174,6 +189,7 @@ export default {
   .card-title {
     font-size: 0.9rem;
     margin-bottom: 8px;
+    min-height: 2.6em; /* 2줄 높이 고정 */
   }
   
   .card-dates {
@@ -183,6 +199,11 @@ export default {
   .date-item {
     font-size: 0.75rem;
     margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  
+  .date-label {
+    margin-right: 4px;
   }
 }
 </style> 
