@@ -34,6 +34,11 @@
 
 <script>
 import { onMounted, onUnmounted } from 'vue'
+import { Swiper } from 'swiper'
+import { Autoplay, Navigation, Pagination } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/navigation'
+import 'swiper/css/pagination'
 
 export default {
   name: 'SliderHeroSection',
@@ -109,6 +114,7 @@ export default {
         
         // Set the slider
         this.slideshow = new Swiper(this.DOM.el, {
+          modules: [Autoplay, Navigation, Pagination],
           loop: true,
           autoplay: {
             delay: this.config.slideshow.delay,
@@ -130,7 +136,7 @@ export default {
               const number = (index <= 8) ? '0' + (slideIndex + 1) : (slideIndex + 1)
               
               let paginationItem = '<span class="slideshow-pagination-item">'
-              paginationItem += '<span class="pagination-number">' + number + '</span>'
+              paginationItem += '<span class="pagination-number" style="color: #FFFFFF !important; font-weight: bold !important;">' + number + '</span>'
               paginationItem = (index <= 8) ? paginationItem + '<span class="pagination-separator"><span class="pagination-separator-loader"></span></span>' : paginationItem
               paginationItem += '</span>'
             
@@ -236,39 +242,8 @@ export default {
     }
 
     onMounted(() => {
-      // Load external libraries
-      const loadScript = (src) => {
-        return new Promise((resolve, reject) => {
-          const script = document.createElement('script')
-          script.src = src
-          script.onload = resolve
-          script.onerror = reject
-          document.head.appendChild(script)
-        })
-      }
-
-      const loadCSS = (href) => {
-        return new Promise((resolve) => {
-          const link = document.createElement('link')
-          link.rel = 'stylesheet'
-          link.href = href
-          link.onload = resolve
-          document.head.appendChild(link)
-        })
-      }
-
-      // Load required libraries
-      Promise.all([
-        loadCSS('https://cdnjs.cloudflare.com/ajax/libs/Swiper/4.4.1/css/swiper.min.css'),
-        loadCSS('https://use.fontawesome.com/releases/v5.0.13/css/all.css'),
-        loadCSS('https://fonts.googleapis.com/css?family=Oswald:500'),
-        loadScript('https://cdnjs.cloudflare.com/ajax/libs/Swiper/4.4.1/js/swiper.min.js')
-      ]).then(() => {
-        // Initialize slideshow
-        slideshow = new Slideshow(document.querySelector('.slideshow'))
-      }).catch(error => {
-        console.error('Failed to load slideshow libraries:', error)
-      })
+      // Initialize slideshow directly
+      slideshow = new Slideshow(document.querySelector('.slideshow'))
     })
 
     onUnmounted(() => {
@@ -350,15 +325,16 @@ export default {
 
 .slideshow-pagination {
   position: absolute;
-  bottom: 5rem;
-  left: 0;
-  width: 100%;
+  bottom: 2rem;
+  right: 2rem;
+  width: auto;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
   transition: .3s opacity;
   z-index: 10;
+  gap: 1.5rem;
 }
 
 .slideshow-pagination-item {
@@ -423,7 +399,34 @@ export default {
   color: #FFFFFF !important;
   font-family: 'Oswald', sans-serif;
   font-weight: bold;
-  padding: 0 0.5rem;
+  padding: 0 1.5rem;
+}
+
+/* 더 강력한 선택자로 하얀색 강제 적용 */
+.slideshow-pagination .slideshow-pagination-item .pagination-number,
+.slideshow-pagination .slideshow-pagination-item.active .pagination-number,
+.slider-hero-section .slideshow-pagination .slideshow-pagination-item .pagination-number,
+.slider-hero-section .slideshow-pagination .slideshow-pagination-item.active .pagination-number {
+  color: #FFFFFF !important;
+  font-weight: bold !important;
+}
+
+/* 모든 pagination-number에 하얀색 강제 적용 */
+.pagination-number,
+span.pagination-number,
+.slideshow-pagination-item span,
+.slideshow-pagination-item .pagination-number,
+.slider-hero-section .pagination-number,
+.slider-hero-section span.pagination-number {
+  color: #FFFFFF !important;
+  font-weight: bold !important;
+}
+
+/* 최고 우선순위로 하얀색 강제 적용 */
+.slider-hero-section .slideshow-pagination .slideshow-pagination-item .pagination-number {
+  color: #FFFFFF !important;
+  font-weight: bold !important;
+  text-shadow: none !important;
 }
 
 .pagination-separator {
