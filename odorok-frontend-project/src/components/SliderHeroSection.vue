@@ -3,18 +3,18 @@
     <div class="swiper-container slideshow">
       <div class="swiper-wrapper">
         <div class="swiper-slide slide">
-          <div class="slide-image" style="background-image: url('https://images.unsplash.com/photo-1538083024336-555cf8943ddc?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=66b476a51b19889e13182c0e4827af18&auto=format&fit=crop&w=1950&q=80')"></div>
-          <span class="slide-title">여행의 시작</span>
+          <div class="slide-image" style="background-image: url('/slider-1.avif')"></div>
+          <span class="slide-title">나를 위한 건강 여정</span>
         </div>
 
         <div class="swiper-slide slide">
-          <div class="slide-image" style="background-image: url('https://images.unsplash.com/photo-1500375592092-40eb2168fd21?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=e07d2457879a4e15577ec75a31023e47&auto=format&fit=crop&w=2134&q=80')"></div>
-          <span class="slide-title">오도록과 함께</span>
+          <div class="slide-image" style="background-image: url('/slider-2.jpg')"></div>
+          <span class="slide-title">소중한 추억까지</span>
         </div>
 
         <div class="swiper-slide slide">
-          <div class="slide-image" style="background-image: url('https://images.unsplash.com/photo-1482059470115-0aadd6bf6834?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=267bba9a4e280ec64388fe8fb01e9d1b&auto=format&fit=crop&w=1950&q=80')"></div>
-          <span class="slide-title">소중한 순간들</span>
+          <div class="slide-image" style="background-image: url('/slider-3.webp')"></div>
+          <span class="slide-title">오도록과 함께 하세요</span>
         </div>
       </div>
 
