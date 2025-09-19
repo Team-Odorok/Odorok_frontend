@@ -144,27 +144,29 @@ export const communityApi = {
     }
   },
 
-    // 게시글 작성 (Swagger 문서 기준)
+    // 게시글 작성 (multipart/form-data: data(JSON) + images(files))
     createArticle: async (articleData) => {
       try {
         console.log('📝 게시글 작성 시작')
-        
-        // Swagger 문서에 맞는 바디 형식으로 변환
-        const requestBody = {
-          data: {
-            title: articleData.title,
-            content: articleData.content,
-            boardType: articleData.boardType || 1,
-            notice: articleData.notice || false,
-            diseaseId: articleData.diseaseId || null,
-            courseId: articleData.courseId || null
-          },
-          images: articleData.images || []
+        // FormData 구성: data는 JSON Blob, images는 파일 배열
+        const dataJson = {
+          title: articleData.title,
+          content: articleData.content,
+          boardType: articleData.boardType || 1,
+          notice: articleData.notice || false,
+          diseaseId: articleData.diseaseId || null,
+          courseId: articleData.courseId || null
         }
-        
-        console.log('📤 전송할 데이터:', requestBody)
-        
-        const response = await apiClient.post('/articles', requestBody)
+
+        const form = new FormData()
+        form.append('data', new Blob([JSON.stringify(dataJson)], { type: 'application/json' }))
+        ;(articleData.images || []).forEach((file) => {
+          if (file) form.append('images', file)
+        })
+
+        console.log('📤 FormData 전송: data(JSON) + images(files)')
+
+        const response = await apiClient.post('/articles', form)
         console.log('✅ 게시글 작성 성공!', response.data)
         return response.data
       } catch (error) {

@@ -89,7 +89,7 @@ import CourseRegionTab from '../components/CourseRegionTab.vue'
 import CourseAllTab from '../components/CourseAllTab.vue'
 import Pagination from '../components/pagination.vue'
 
-const selected = ref('custom')
+const selected = ref('main')
 const courses = ref([])
 const selectedCourse = ref(null)
 const courseDetail = ref(null)
@@ -101,6 +101,9 @@ const diseaseId = ref(1)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const totalPagesCustom = ref(1)
+// 요청 레이스 방지용 ID
+const mainRequestId = ref(0)
+const customRequestId = ref(0)
 
 // 데이터 정규화 함수
 function normalizeCourseData(rawData) {
@@ -128,6 +131,7 @@ async function loadCourses() {
   error.value = null
   
   try {
+    const rid = ++mainRequestId.value
     const response = await courseApi.getAllCourses(0, 500)
     
     let list
@@ -141,6 +145,7 @@ async function loadCourses() {
     // 간단 정렬(백 정렬 파라미터 준비 전까지 프런트에서 보조)
     if (sortBy.value === 'rating,desc') list.sort((a,b)=> (b.rating||0)-(a.rating||0))
     else if (sortBy.value === 'rating,asc') list.sort((a,b)=> (a.rating||0)-(b.rating||0))
+    if (selected.value !== 'main' || rid !== mainRequestId.value) return
     courses.value = list
     console.log('로드된 코스 수:', courses.value.length)
   } catch (err) {
@@ -148,7 +153,7 @@ async function loadCourses() {
     error.value = '코스 데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.'
     
   } finally {
-    loading.value = false
+    if (selected.value === 'main') loading.value = false
   }
 }
 
@@ -187,6 +192,7 @@ async function loadDiseaseCourses(pageArg = 1) {
     console.log('❌ 맞춤 탭이 아니므로 종료')
     return
   }
+  const rid = ++customRequestId.value
   currentPage.value = pageArg
   loading.value = true
   error.value = null
@@ -201,6 +207,7 @@ async function loadDiseaseCourses(pageArg = 1) {
     console.log('📡 API 응답:', res)
     const body = res?.data || res
     const list = Array.isArray(body) ? body : (body?.items || [])
+    if (selected.value !== 'custom' || rid !== customRequestId.value) return
     courses.value = normalizeCourseData(list)
     console.log('✅ 맞춤 코스 로드 완료, 개수:', courses.value.length)
     // 총 페이지 계산: 우선순위 totalPages -> totalElements/size -> length
@@ -216,7 +223,7 @@ async function loadDiseaseCourses(pageArg = 1) {
     console.error('❌ 맞춤(질병) 코스 로드 실패:', e)
     error.value = '맞춤 코스를 불러오는데 실패했습니다.'
   } finally {
-    loading.value = false
+    if (selected.value === 'custom') loading.value = false
   }
 }
 
@@ -243,8 +250,11 @@ watch(selected, (val) => {
   if (val === 'custom') {
     console.log('✅ 맞춤 탭 선택됨, loadDiseaseCourses 호출')
     loadDiseaseCourses(1)
+  } else {
+    console.log('✅ 일반 탭 선택됨, loadCourses 호출')
+    loadCourses()
   }
-}, { immediate: true })
+}, { immediate: false })
 </script>
 
 <style scoped>

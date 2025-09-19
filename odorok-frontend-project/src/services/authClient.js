@@ -4,15 +4,13 @@ import axios from 'axios'
 
 // 인증 전용 Axios 인스턴스
 const authClient = axios.create({
-  baseURL: 'https://odorok.duckdns.org', // 도메인으로 다시 변경 
-  timeout: 30000, // 타임아웃을 30초로 증가
-  withCredentials: true, // 쿠키 포함
+  baseURL: 'https://odorok.duckdns.org/api',
+  timeout: 30000,
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json, text/plain, */*',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With'
+    'Accept': 'application/json, text/plain, */*'
+
   }
 })
 

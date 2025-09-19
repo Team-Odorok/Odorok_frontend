@@ -4,7 +4,7 @@ const normalizeResponse = (response) => response?.data ?? response
 
 export const getVisitedCourses = async () => {
   try {
-    const response = await authClient.get('/visited-courses')
+    const response = await authClient.get('https://odorok.duckdns.org/api/visited-courses')
     const data = normalizeResponse(response)
     
     // 새로운 응답 형식 처리

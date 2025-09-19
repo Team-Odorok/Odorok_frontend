@@ -73,7 +73,7 @@ export const mypageService = {
       
           // 스웨거에 명시된 건강정보 엔드포인트만 시도
           const endpoints = [
-            '/me/userhealth'     // 스웨거에 명시된 엔드포인트
+            'https://odorok.duckdns.org/api/me/userhealth'     // 절대경로로 호출
           ]
       
       for (const endpoint of endpoints) {

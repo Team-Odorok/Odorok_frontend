@@ -47,12 +47,15 @@ export default {
                           this.article.replies?.length || 
                           0
       
+      console.log(`🔍 게시글 ${this.article.id} 전체 데이터:`, this.article)
       console.log(`🔍 게시글 ${this.article.id} 댓글 갯수:`, {
         commentCount: this.article.commentCount,
         comments: this.article.comments?.length,
         comment: this.article.comment?.length,
         replyCount: this.article.replyCount,
         replies: this.article.replies?.length,
+        comment_count: this.article.comment_count,
+        commentCnt: this.article.commentCnt,
         최종결과: commentCount
       })
       

@@ -34,6 +34,7 @@
 
 <script>
 import { onMounted, onUnmounted } from 'vue'
+
 import { Swiper } from 'swiper'
 import { Autoplay, Navigation, Pagination } from 'swiper/modules'
 import 'swiper/css'
@@ -114,6 +115,7 @@ export default {
         
         // Set the slider
         this.slideshow = new Swiper(this.DOM.el, {
+
           modules: [Autoplay, Navigation, Pagination],
           loop: true,
           autoplay: {
@@ -136,6 +138,7 @@ export default {
               const number = (index <= 8) ? '0' + (slideIndex + 1) : (slideIndex + 1)
               
               let paginationItem = '<span class="slideshow-pagination-item">'
+
               paginationItem += '<span class="pagination-number" style="color: #FFFFFF !important; font-weight: bold !important;">' + number + '</span>'
               paginationItem = (index <= 8) ? paginationItem + '<span class="pagination-separator"><span class="pagination-separator-loader"></span></span>' : paginationItem
               paginationItem += '</span>'
@@ -242,6 +245,7 @@ export default {
     }
 
     onMounted(() => {
+
       // Initialize slideshow directly
       slideshow = new Slideshow(document.querySelector('.slideshow'))
     })
@@ -325,6 +329,7 @@ export default {
 
 .slideshow-pagination {
   position: absolute;
+
   bottom: 2rem;
   right: 2rem;
   width: auto;
@@ -399,6 +404,7 @@ export default {
   color: #FFFFFF !important;
   font-family: 'Oswald', sans-serif;
   font-weight: bold;
+
   padding: 0 1.5rem;
 }
 
