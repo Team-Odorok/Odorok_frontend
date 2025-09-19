@@ -8,7 +8,7 @@ export const login = async (username, password) => {
     formData.append('username', username)
     formData.append('password', password)
 
-    const response = await authClient.post('/auth/login', formData)
+    const response = await authClient.post('/api/auth/login', formData)
     return handleLoginResponse(response)
     
   } catch (error) {

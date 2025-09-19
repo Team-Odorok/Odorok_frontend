@@ -128,7 +128,7 @@ export default {
 
 .author {
   font-weight: 500;
-  color: #3498db;
+  color: #303E69;
 }
 
 .category {
