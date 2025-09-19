@@ -92,7 +92,7 @@
                   style="padding: 8px; margin-bottom: 4px; border: 1px solid #eee; border-radius: 4px;">
                 <strong>{{ attraction.title }}</strong>
                 <div style="font-size: 12px; color: #666;">{{ attraction.addr1 }}</div>
-                <div v-if="attraction.tel" style="font-size: 12px; color: #007bff;">☎ {{ attraction.tel }}</div>
+                <div v-if="attraction.tel" style="font-size: 12px; color: #303E69;">☎ {{ attraction.tel }}</div>
               </li>
             </ul>
           </div>
@@ -349,7 +349,7 @@ export default {
 /* 리스트 */
 .course-item { transition: transform .12s ease, box-shadow .12s ease; cursor: pointer; padding: 12px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 6px; }
 .course-item:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.08); }
-.course-item.selected { background-color: #e3f2fd; border-color: #007bff !important; }
+.course-item.selected { background-color: #e3f2fd; border-color: #303E69 !important; }
 .course-item.row { display:flex; align-items:center; justify-content: space-between; gap: 12px; }
 .course-item .col.name { font-weight: 700; }
 .course-item .col.name .muted { color: #888; font-weight: 400; }
@@ -428,12 +428,12 @@ export default {
 
 li:hover {
   background-color: #f8f9fa;
-  border-color: #007bff !important;
+  border-color: #303E69 !important;
 }
 
 li.selected {
   background-color: #e3f2fd;
-  border-color: #007bff !important;
+  border-color: #303E69 !important;
 }
 
 button:disabled {

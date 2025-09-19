@@ -56,7 +56,7 @@ html, body {
   padding: 0;
   font-family: 'NanumBarunGothicYetHangul', sans-serif;
   font-weight: 500;
-  background-color: #f5ede2;
+  background-color: #fff9f0;
 }
 </style>
 

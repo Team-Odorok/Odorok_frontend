@@ -13,7 +13,6 @@
           <option value="rating,desc">별점 높은 순</option>
           <option value="rating,asc">별점 낮은 순</option>
         </select>
-        <button @click="showAttendance = true" style="padding:6px 10px; border:1px solid #dee2e6; border-radius:4px; background:#fff; cursor:pointer;">출석 모달</button>
       </div>
     </div>
 
@@ -37,7 +36,7 @@
       <!-- 에러 상태 표시 -->
       <div v-else-if="error" style="text-align: center; padding: 20px; color: red;">
         <p>{{ error }}</p>
-        <button @click="loadCourses" style="margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        <button @click="loadCourses" style="margin-top: 10px; padding: 8px 16px; background: #303E69; color: white; border: none; border-radius: 4px; cursor: pointer;">
           다시 시도
         </button>
       </div>
@@ -77,7 +76,6 @@
       </div>
       </div>
     </div>
-    <AttendanceModel :visible="showAttendance" @close="showAttendance=false" />
   </div>
 </template>
 
@@ -89,7 +87,6 @@ import CourseMainTab from '../components/CourseMainTab.vue'
 import CourseCustomTab from '../components/CourseCustomTab.vue'
 import CourseRegionTab from '../components/CourseRegionTab.vue'
 import CourseAllTab from '../components/CourseAllTab.vue'
-import AttendanceModel from '../components/AttendanceModel.vue'
 import Pagination from '../components/pagination.vue'
 
 const selected = ref('custom')
@@ -100,7 +97,6 @@ const attractions = ref([])
 const loading = ref(false)
 const error = ref(null)
 const sortBy = ref('createdAt')
-const showAttendance = ref(false)
 const diseaseId = ref(1)
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -267,9 +263,9 @@ button:hover {
 }
 
 button.active {
-  background: #007bff;
+  background: #303E69;
   color: white;
-  border-color: #007bff;
+  border-color: #303E69;
 }
 
 button:disabled {
@@ -288,7 +284,7 @@ button:disabled {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
@@ -303,7 +299,7 @@ button:disabled {
 .course-search-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 26px;
 }
 
 /* 페이지 헤더 스타일 */

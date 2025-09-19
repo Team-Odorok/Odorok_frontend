@@ -404,7 +404,7 @@ export default {
 .detail-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 26px;
 }
 
 .loading, .error {
@@ -416,7 +416,7 @@ export default {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
@@ -434,7 +434,7 @@ export default {
 .retry-button {
   margin-top: 10px;
   padding: 8px 16px;
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   border-radius: 4px;
@@ -465,6 +465,11 @@ export default {
   gap: 16px;
   font-size: 14px;
   color: #6c757d;
+}
+
+.article-meta .author {
+  color: #303E69;
+  font-weight: 600;
 }
 
 .article-content {
@@ -533,7 +538,7 @@ export default {
 
 .comment-form button {
   padding: 8px 16px;
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   border-radius: 4px;
@@ -567,7 +572,7 @@ export default {
 
 .comment-author {
   font-weight: 600;
-  color: #495057;
+  color: #303E69;
 }
 
 .comment-date {
@@ -591,7 +596,7 @@ export default {
 
 .edit-btn:hover {
   background: #e3f2fd;
-  border-color: #2196f3;
+  border-color: #303E69;
 }
 
 .delete-btn:hover {

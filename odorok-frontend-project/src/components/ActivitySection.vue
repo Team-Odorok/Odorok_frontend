@@ -103,7 +103,7 @@ export default {
 }
 
 .refresh-btn {
-  background: #3498db;
+  background: #303E69;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -118,7 +118,7 @@ export default {
 }
 
 .refresh-btn:hover:not(:disabled) {
-  background: #2980b9;
+  background: #1e2a4a;
 }
 
 .refresh-btn:disabled {
@@ -148,9 +148,9 @@ export default {
 }
 
 .stat-card:hover {
+  border-color: #303E69;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #3498db;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .stat-label {

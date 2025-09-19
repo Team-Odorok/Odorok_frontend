@@ -133,7 +133,7 @@ export default {
   height: 100px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid #3498db;
+  border: 4px solid #303E69;
 }
 
 .image-upload-overlay {
@@ -187,7 +187,7 @@ export default {
 }
 
 .tier-level {
-  background: #3498db;
+  background: #303E69;
   color: white;
   padding: 6px 12px;
   border-radius: 15px;
@@ -202,7 +202,7 @@ export default {
 }
 
 .user-activity-score {
-  color: #27ae60;
+  color: #384F45;
   font-size: 1.1rem;
   font-weight: 600;
 }

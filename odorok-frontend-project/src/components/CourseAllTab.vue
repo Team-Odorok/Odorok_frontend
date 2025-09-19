@@ -90,7 +90,7 @@
                   style="padding: 8px; margin-bottom: 4px; border: 1px solid #eee; border-radius: 4px;">
                 <strong>{{ attraction.title }}</strong>
                 <div style="font-size: 12px; color: #666;">{{ attraction.addr1 }}</div>
-                <div v-if="attraction.tel" style="font-size: 12px; color: #007bff;">☎ {{ attraction.tel }}</div>
+                <div v-if="attraction.tel" style="font-size: 12px; color: #303E69;">☎ {{ attraction.tel }}</div>
               </li>
             </ul>
           </div>
@@ -378,7 +378,7 @@ export default {
 }
 .item:hover { 
   background: #f8f9fa; 
-  border-color: #007bff; 
+  border-color: #303E69; 
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
@@ -450,7 +450,7 @@ export default {
 
 .pager .btn {
   padding: 8px 16px;
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   border-radius: 4px;
@@ -460,7 +460,7 @@ export default {
 }
 
 .pager .btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .pager .btn:disabled {
@@ -548,8 +548,8 @@ export default {
 
 .detail-header .btn.outline {
   background: #fff;
-  color: #007bff;
-  border-color: #007bff;
+  color: #303E69;
+  border-color: #303E69;
 }
 
 .detail-header .btn.success {
@@ -614,12 +614,12 @@ export default {
 }
 
 .tab.active {
-  color: #007bff;
-  border-bottom-color: #007bff;
+  color: #303E69;
+  border-bottom-color: #303E69;
 }
 
 .tab:hover {
-  color: #007bff;
+  color: #303E69;
 }
 
 .detail-grid {

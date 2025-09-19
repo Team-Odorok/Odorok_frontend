@@ -4,6 +4,7 @@
       <!-- 로고/브랜드 -->
       <div class="navbar-brand">
         <router-link to="/" class="brand-link">
+          <img src="/odorok-resized.png" alt="오도록" class="brand-logo" />
           <span class="brand-text">오도록</span>
         </router-link>
       </div>
@@ -28,9 +29,10 @@
       <div class="navbar-auth">
         <template v-if="isLoggedIn">
           <button @click="showAttendance = true" class="attendance-btn">
-            출석
+            <img src="/white-stamp.png" alt="출석" class="stamp-icon" />
+            <span class="attendance-tooltip">출석체크</span>
           </button>
-          <router-link to="/mypage" class="user-info user-link">{{ userNickname }}</router-link>
+          <router-link to="/mypage" class="user-info user-link">{{ userNickname }}님</router-link>
           <button @click="handleLogout" class="logout-btn">
             로그아웃
           </button>
@@ -159,7 +161,7 @@ export default {
 
 <style scoped>
 .navbar {
-  background: white;
+  background: #DDCDB5;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: fixed;
   top: 0;
@@ -171,12 +173,12 @@ export default {
 }
 
 .navbar-container {
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 40px;
   height: 80px;
 }
 
@@ -187,17 +189,24 @@ export default {
 
 .brand-link {
   text-decoration: none;
-  color: #B96664;
+  color: #C15345;
   font-family: 'NanumMyeongjoExtraBold', serif;
   font-size: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .brand-text {
   font-family: 'NanumMyeongjoExtraBold', serif;
-  background: linear-gradient(135deg, #B96664 0%, #41687A 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #4F3A36;
 }
 
 /* 메뉴 아이템들 */
@@ -212,7 +221,7 @@ export default {
 
 .nav-link {
   text-decoration: none;
-  color: #333;
+  color: #B96664;
   font-weight: normal;
   padding: 12px 20px;
   border-radius: 6px;
@@ -222,24 +231,37 @@ export default {
 }
 
 .nav-link:hover {
-  color: #B96664;
-  background: #DDCDB5;
+  color: #303E69;
+  background: none;
+}
+
+.nav-link:hover::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 2px;
+  background: #303E69;
+  border-radius: 1px;
 }
 
 .nav-link.router-link-active {
-  color: #B96664;
-  background: #DDCDB5;
+  color: #303E69;
+  background: none;
+  font-weight: normal;
 }
 
 .nav-link.router-link-active::after {
   content: '';
   position: absolute;
-  bottom: -2px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 20px;
+  width: 30px;
   height: 2px;
-  background: #B96664;
+  background: #303E69;
   border-radius: 1px;
 }
 
@@ -252,27 +274,26 @@ export default {
 }
 
 .user-info {
-  color: #666;
+  color: #4F3A36;
   font-size: 1rem;
   font-weight: 500;
-  padding: 12px 20px;
-  border-radius: 6px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  padding: 0;
+  background: none;
+  border: none;
 }
 
 .user-link {
   text-decoration: none;
-  color: #666;
+  color: #303E69;
   transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .user-link:hover {
-  color: #B96664;
-  background: #DDCDB5;
-  border-color: #B96664;
-  transform: translateY(-1px);
+  color: #303E69;
+  background: none;
+  border: none;
+  text-decoration: underline;
 }
 
 .login-btn, .logout-btn, .attendance-btn {
@@ -287,34 +308,84 @@ export default {
 }
 
 .login-btn {
-  background: #41687A;
+  background: #877F5E;
   color: white;
 }
 
 .login-btn:hover {
-  background: #B96664;
+  background: #C15345;
   transform: translateY(-1px);
 }
 
 .logout-btn {
-  background: #f8f9fa;
-  color: #666;
-  border: 1px solid #e9ecef;
+  background: #877F5E;
+  color: white;
+  border: 1px solid #877F5E;
 }
 
 .logout-btn:hover {
-  background: #e9ecef;
-  color: #333;
+  background: #6b5d47;
+  color: white;
+  transform: translateY(-1px);
 }
 
 .attendance-btn {
-  background: #ADC8B7;
+  background: #C15345;
   color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  padding: 0;
+  border: none;
+  position: relative;
+}
+
+.stamp-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .attendance-btn:hover {
-  background: #9bb8a5;
+  background: #a03d32;
   transform: translateY(-1px);
+}
+
+.attendance-tooltip {
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.attendance-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid #333;
+}
+
+.attendance-btn:hover .attendance-tooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* 반응형 디자인 */
@@ -332,6 +403,11 @@ export default {
   .nav-link {
     padding: 8px 14px;
     font-size: 1rem;
+  }
+  
+  .brand-logo {
+    width: 35px;
+    height: 35px;
   }
   
   .brand-text {
@@ -360,9 +436,15 @@ export default {
     font-size: 0.9rem;
   }
   
-  .login-btn, .logout-btn, .attendance-btn {
+  .login-btn, .logout-btn {
     padding: 8px 14px;
     font-size: 1rem;
+  }
+  
+  .attendance-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
   }
 }
 </style>

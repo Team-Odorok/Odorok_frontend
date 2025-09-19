@@ -2,7 +2,7 @@
   <div class="diary-card" @click="$emit('click')">
     <div class="card-image">
       <div class="image-placeholder">
-        <span class="placeholder-icon">📸</span>
+        <span class="placeholder-icon"></span>
       </div>
     </div>
     
@@ -108,7 +108,8 @@ export default {
 
 .card-title {
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: bold;
+  font-family: 'MaruBuri', serif;
   color: #333;
   margin: 0 0 12px 0;
   line-height: 1.3;
@@ -122,6 +123,7 @@ export default {
 
 .card-dates {
   margin-bottom: 16px;
+  font-family: 'MaruBuri', serif;
 }
 
 .date-item {
@@ -130,6 +132,7 @@ export default {
   margin-bottom: 6px;
   font-size: 0.85rem;
   flex-wrap: wrap;
+  font-family: 'MaruBuri', serif;
 }
 
 .date-item:last-child {
@@ -141,12 +144,14 @@ export default {
   font-weight: 500;
   margin-right: 8px;
   flex-shrink: 0;
+  font-family: 'MaruBuri', serif;
 }
 
 .date-value {
   color: #495057;
   font-weight: 400;
   word-break: keep-all;
+  font-family: 'MaruBuri', serif;
 }
 
 /* 카드 클릭으로 일지 상세 보기 가능 */

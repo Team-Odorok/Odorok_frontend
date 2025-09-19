@@ -32,13 +32,13 @@
           :disabled="creatingDiary"
           class="create-diary-btn"
         >
-          {{ creatingDiary ? '권한 확인 중...' : '✏️ 새 일지 작성' }}
+          {{ creatingDiary ? '권한 확인 중...' : '새 일지 작성' }}
         </button>
         <button 
           @click="showPurchaseModal = true"
           class="purchase-btn"
         >
-          💳 일지 생성권 구매
+          일지 생성권 구매
         </button>
       </div>
     </div>
@@ -117,7 +117,7 @@
         :disabled="currentPage === 1"
         class="page-btn prev-btn"
       >
-        ‹ 이전
+        이전
       </button>
       
       <div class="page-info">
@@ -131,7 +131,7 @@
         :disabled="currentPage === totalPages"
         class="page-btn next-btn"
       >
-        다음 ›
+        다음
       </button>
     </div>
 
@@ -234,7 +234,7 @@
                 :disabled="currentMonthDiaryIndex === 0"
                 class="month-page-btn"
               >
-                ‹ 이전
+                이전
               </button>
               
               <div class="month-page-info">
@@ -248,7 +248,7 @@
                 :disabled="currentMonthDiaryIndex === selectedMonthGroup.diaries.length - 1"
                 class="month-page-btn"
               >
-                다음 ›
+                다음
               </button>
             </div>
           </div>
@@ -855,7 +855,7 @@ export default {
 .diary-list-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 26px;
 }
 
 .diary-header {
@@ -917,14 +917,28 @@ export default {
   min-width: 140px;
 }
 
+.year-dropdown:hover {
+  border-color: #303E69;
+}
+
 .year-dropdown:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #303E69;
+}
+
+.year-dropdown option:hover {
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.year-dropdown option:checked {
+  background-color: #e9ecef;
+  color: #333;
 }
 
 
 .create-diary-btn {
-  background: linear-gradient(135deg, #41687A 0%, #B96664 100%);
+  background: #384F45;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -937,7 +951,7 @@ export default {
 
 .create-diary-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(65, 104, 122, 0.3);
+  box-shadow: 0 4px 15px rgba(56, 79, 69, 0.3);
 }
 
 .create-diary-btn:disabled {
@@ -956,7 +970,7 @@ export default {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
@@ -1004,7 +1018,7 @@ export default {
   color: #333;
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 1px solid #ADC8B7;
 }
 
 .month-summary-card {
@@ -1029,17 +1043,24 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
 }
 
 .summary-header {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
 .summary-header h3 {
   font-size: 1.2rem;
   margin-bottom: 5px;
-  font-weight: 600;
+  font-weight: bold;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-count {
@@ -1056,7 +1077,7 @@ export default {
 
 .book-preview {
   width: 100%;
-  max-width: 120px;
+  max-width: 180px;
 }
 
 .book-page {
@@ -1096,7 +1117,7 @@ export default {
 }
 
 .month-page-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -1107,7 +1128,7 @@ export default {
 }
 
 .month-page-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .month-page-btn:disabled {
@@ -1125,7 +1146,7 @@ export default {
 }
 
 .current-month-page {
-  color: #007bff;
+  color: #303E69;
 }
 
 .month-page-separator {
@@ -1180,8 +1201,9 @@ export default {
 .current-diary-detail .diary-title {
   font-size: 2rem;
   margin-bottom: 15px;
-  font-weight: 600;
+  font-weight: bold;
   text-align: left;
+  font-family: 'MaruBuri', serif;
 }
 
 .current-diary-detail .diary-meta {
@@ -1190,10 +1212,12 @@ export default {
   gap: 20px;
   font-size: 0.9rem;
   opacity: 0.9;
+  font-family: 'MaruBuri', serif;
 }
 
 .current-diary-detail .course-name {
   font-weight: 600;
+  font-family: 'MaruBuri', serif;
 }
 
 .current-diary-detail .image-gallery {
@@ -1254,6 +1278,7 @@ export default {
   color: #555;
   font-size: 1rem;
   white-space: pre-wrap;
+  font-family: 'MaruBuri', serif;
 }
 
 /* 월별 합본 모달 마크다운 스타일링 - 일반 텍스트와 일관된 여백 */
@@ -1272,7 +1297,7 @@ export default {
 
 .current-diary-detail .content-text h1 {
   font-size: 1.8rem;
-  border-bottom: 2px solid #007bff;
+  border-bottom: 2px solid #303E69;
   padding-bottom: 0.3em;
   margin-bottom: 0.8em;
 }
@@ -1308,7 +1333,7 @@ export default {
 }
 
 .current-diary-detail .content-text blockquote {
-  border-left: 4px solid #007bff;
+  border-left: 4px solid #303E69;
   padding-left: 1em;
   margin: 0.5em 0;
   color: #666;
@@ -1338,7 +1363,7 @@ export default {
 }
 
 .current-diary-detail .content-text a {
-  color: #007bff;
+  color: #303E69;
   text-decoration: none;
 }
 
@@ -1371,12 +1396,12 @@ export default {
 }
 
 .current-diary-detail .edit-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
 }
 
 .current-diary-detail .edit-btn:hover {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .current-diary-detail .delete-btn {
@@ -1416,7 +1441,7 @@ export default {
 }
 
 .create-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -1427,7 +1452,7 @@ export default {
 }
 
 .create-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .create-btn:disabled {
@@ -1446,7 +1471,7 @@ export default {
 }
 
 .page-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -1457,7 +1482,7 @@ export default {
 }
 
 .page-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .page-btn:disabled {
@@ -1475,7 +1500,7 @@ export default {
 }
 
 .current-page {
-  color: #007bff;
+  color: #303E69;
 }
 
 .page-separator {
@@ -1557,8 +1582,9 @@ export default {
 .diary-detail .diary-title {
   font-size: 2rem;
   margin-bottom: 15px;
-  font-weight: 600;
+  font-weight: bold;
   text-align: left;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-detail .diary-meta {
@@ -1567,10 +1593,12 @@ export default {
   gap: 20px;
   font-size: 0.9rem;
   opacity: 0.9;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-detail .course-name {
   font-weight: 600;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-detail .image-gallery {
@@ -1631,6 +1659,7 @@ export default {
   color: #555;
   font-size: 1rem;
   white-space: pre-wrap;
+  font-family: 'MaruBuri', serif;
 }
 
 /* 마크다운 스타일링 - 일반 텍스트와 일관된 여백 */
@@ -1649,7 +1678,7 @@ export default {
 
 .diary-detail .content-text h1 {
   font-size: 1.8rem;
-  border-bottom: 2px solid #007bff;
+  border-bottom: 2px solid #303E69;
   padding-bottom: 0.3em;
   margin-bottom: 0.8em;
 }
@@ -1685,7 +1714,7 @@ export default {
 }
 
 .diary-detail .content-text blockquote {
-  border-left: 4px solid #007bff;
+  border-left: 4px solid #303E69;
   padding-left: 1em;
   margin: 0.5em 0;
   color: #666;
@@ -1715,7 +1744,7 @@ export default {
 }
 
 .diary-detail .content-text a {
-  color: #007bff;
+  color: #303E69;
   text-decoration: none;
 }
 
@@ -1748,12 +1777,12 @@ export default {
 }
 
 .diary-detail .edit-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
 }
 
 .diary-detail .edit-btn:hover {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .diary-detail .delete-btn {
@@ -1966,7 +1995,7 @@ export default {
 
 /* 구매 버튼 스타일 */
 .purchase-btn {
-  background: linear-gradient(135deg, #DDCDB5 0%, #B96664 100%);
+  background: #303E69;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -1979,7 +2008,7 @@ export default {
 
 .purchase-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(185, 102, 100, 0.3);
+  box-shadow: 0 4px 15px rgba(48, 62, 105, 0.3);
 }
 
 .purchase-btn:active {
@@ -2066,7 +2095,7 @@ export default {
 
 .quantity-dropdown:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #303E69;
 }
 
 .purchase-summary {
@@ -2084,7 +2113,7 @@ export default {
 }
 
 .purchase-summary strong {
-  color: #007bff;
+  color: #303E69;
   font-size: 1.2rem;
 }
 
@@ -2116,7 +2145,7 @@ export default {
 }
 
 .confirm-purchase-btn {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background: linear-gradient(135deg, #303E69 0%, #1e2a4a 100%);
   color: white;
 }
 

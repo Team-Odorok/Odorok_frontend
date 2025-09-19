@@ -149,7 +149,7 @@ export default {
 .cell { height:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; }
 .cell.empty { background:transparent; }
 .cell.day { background:#fff; border:1px solid #e9ecef; }
-.cell.day.today { outline:2px solid #3b82f6; }
+.cell.day.today { outline:2px solid #303E69; }
 .cell.day.attended { box-shadow:0 0 0 2px #22c55e inset; border-color:#22c55e; }
 .actions { display:flex; justify-content:center; gap:8px; padding: 10px 18px 18px; }
 .checkin, .refresh { height:36px; padding:0 12px; border:1px solid #e5e7eb; background:#fff; border-radius:6px; cursor:pointer; }

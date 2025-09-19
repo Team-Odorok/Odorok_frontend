@@ -1,7 +1,7 @@
 <template>
   <div class="visited-courses-section">
     <div class="section-header">
-      <h3>🏃‍♂️ 방문한 코스</h3>
+      <h3>방문한 코스</h3>
       <button 
         v-if="!loading" 
         @click="refreshVisitedCourses" 
@@ -349,7 +349,7 @@ export default {
 }
 
 .refresh-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -360,7 +360,7 @@ export default {
 }
 
 .refresh-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .refresh-btn:disabled {
@@ -377,7 +377,7 @@ export default {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
@@ -446,7 +446,7 @@ export default {
 .course-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #007bff;
+  border-color: #303E69;
 }
 
 .course-header {
@@ -468,6 +468,7 @@ export default {
 .visit-date {
   font-size: 12px;
   color: #666;
+  font-family: 'MaruBuri', serif;
   white-space: nowrap;
 }
 
@@ -537,12 +538,12 @@ export default {
 }
 
 .view-review-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
 }
 
 .view-review-btn:hover {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .status-badge {
@@ -581,7 +582,7 @@ export default {
 }
 
 .page-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 8px 12px;

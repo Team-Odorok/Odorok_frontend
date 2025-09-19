@@ -236,9 +236,7 @@ export default {
 .mypage-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
-  background-color: #f8f9fa;
-  min-height: 100vh;
+  padding: 26px;
 }
 
 /* 페이지 헤더 스타일 */

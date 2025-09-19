@@ -866,7 +866,7 @@ export default {
 .diary-create-chat-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 26px;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -881,7 +881,7 @@ export default {
 .back-btn {
   background: none;
   border: none;
-  color: #007bff;
+  color: #303E69;
   font-size: 1rem;
   cursor: pointer;
   padding: 10px 0;
@@ -890,7 +890,7 @@ export default {
 }
 
 .back-btn:hover {
-  color: #0056b3;
+  color: #1e2a4a;
 }
 
 .chat-header h1 {
@@ -919,7 +919,7 @@ export default {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
@@ -1039,7 +1039,7 @@ export default {
 }
 
 .completion h3 {
-  color: #28a745;
+  color: #384F45;
 }
 
 .retry-btn {
@@ -1059,7 +1059,7 @@ export default {
 
 
 .view-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #384F45 0%, #2a3a32 100%);
   color: white;
   border: none;
   padding: 12px 30px;
@@ -1098,7 +1098,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 15px;
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #384F45 0%, #2a3a32 100%);
   color: white;
   padding: 20px 25px;
   border-radius: 12px;
@@ -1171,7 +1171,7 @@ export default {
 .completion-header h3 {
   margin-bottom: 10px;
   font-size: 1.5rem;
-  color: #28a745;
+  color: #384F45;
 }
 
 .completion-header p {
@@ -1229,7 +1229,7 @@ export default {
 .title-input {
   flex: 1;
   padding: 12px 16px;
-  border: 2px solid #3498db;
+  border: 2px solid #303E69;
   border-radius: 8px;
   font-size: 18px;
   font-weight: 500;
@@ -1237,7 +1237,7 @@ export default {
 
 .title-input:focus {
   outline: none;
-  border-color: #2980b9;
+  border-color: #1e2a4a;
 }
 
 .save-title-btn,
@@ -1251,12 +1251,12 @@ export default {
 }
 
 .save-title-btn {
-  background-color: #27ae60;
+  background-color: #384F45;
   color: white;
 }
 
 .save-title-btn:hover {
-  background-color: #229954;
+  background-color: #2a3a32;
 }
 
 .cancel-title-btn {
@@ -1299,13 +1299,13 @@ export default {
 }
 
 .tab-btn:hover {
-  border-color: #007bff;
-  color: #007bff;
+  border-color: #303E69;
+  color: #303E69;
 }
 
 .tab-btn.active {
-  background: #007bff;
-  border-color: #007bff;
+  background: #303E69;
+  border-color: #303E69;
   color: white;
 }
 
@@ -1324,13 +1324,15 @@ export default {
   flex: 1;
   padding: 30px;
   overflow-y: auto;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-content h2 {
   font-size: 1.8rem;
   color: #333;
   margin-bottom: 20px;
-  font-weight: 600;
+  font-weight: bold;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text {
@@ -1338,6 +1340,7 @@ export default {
   color: #555;
   font-size: 1rem;
   white-space: pre-wrap;
+  font-family: 'MaruBuri', serif;
 }
 
 .content-display {
@@ -1352,7 +1355,7 @@ export default {
   width: 100%;
   min-height: 300px;
   padding: 16px;
-  border: 2px solid #3498db;
+  border: 2px solid #303E69;
   border-radius: 8px;
   font-size: 1rem;
   line-height: 1.6;
@@ -1363,7 +1366,7 @@ export default {
 
 .content-input:focus {
   outline: none;
-  border-color: #2980b9;
+  border-color: #1e2a4a;
 }
 
 /* 액션 버튼 */
@@ -1412,12 +1415,12 @@ export default {
 }
 
 .save-content-btn {
-  background-color: #27ae60;
+  background-color: #384F45;
   color: white;
 }
 
 .save-content-btn:hover {
-  background-color: #229954;
+  background-color: #2a3a32;
 }
 
 .cancel-content-btn {
@@ -1457,7 +1460,7 @@ export default {
 }
 
 .save-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #384F45 0%, #2a3a32 100%);
   color: white;
 }
 
@@ -1647,7 +1650,7 @@ export default {
 }
 
 .user-avatar {
-  background: #007bff;
+  background: #303E69;
   color: white;
 }
 
@@ -1659,7 +1662,7 @@ export default {
 }
 
 .message.user .message-text {
-  background: #007bff;
+  background: #303E69;
   color: white;
 }
 
@@ -1701,7 +1704,7 @@ export default {
 
 .message-input:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #303E69;
 }
 
 .message-input:disabled {
@@ -1710,7 +1713,7 @@ export default {
 }
 
 .send-btn {
-  background: #007bff;
+  background: #303E69;
   color: white;
   border: none;
   padding: 12px 20px;
@@ -1723,7 +1726,7 @@ export default {
 }
 
 .send-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1e2a4a;
 }
 
 .send-btn:disabled {
@@ -1736,7 +1739,7 @@ export default {
 }
 
 .end-chat-btn {
-  background: #28a745;
+  background: #384F45;
   color: white;
   border: none;
   padding: 10px 16px;
@@ -1750,7 +1753,7 @@ export default {
 }
 
 .end-chat-btn:hover:not(:disabled) {
-  background: #1e7e34;
+  background: #2a3a32;
 }
 
 .end-chat-btn:disabled {
@@ -2124,7 +2127,7 @@ export default {
 }
 
 .message-text :deep(a) {
-  color: #007bff;
+  color: #303E69;
   text-decoration: none;
 }
 
@@ -2140,8 +2143,9 @@ export default {
 .diary-text :deep(h5),
 .diary-text :deep(h6) {
   margin: 16px 0 8px 0;
-  font-weight: 600;
+  font-weight: bold;
   color: #333;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(h1) { font-size: 1.5rem; }
@@ -2154,6 +2158,7 @@ export default {
 .diary-text :deep(p) {
   margin: 8px 0;
   line-height: 1.6;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(ul),
@@ -2165,15 +2170,18 @@ export default {
 .diary-text :deep(li) {
   margin: 4px 0;
   line-height: 1.5;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(strong) {
-  font-weight: 600;
+  font-weight: bold;
   color: #333;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(em) {
   font-style: italic;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(code) {
@@ -2203,6 +2211,7 @@ export default {
   padding-left: 16px;
   color: #666;
   font-style: italic;
+  font-family: 'MaruBuri', serif;
 }
 
 .diary-text :deep(hr) {
@@ -2212,7 +2221,7 @@ export default {
 }
 
 .diary-text :deep(a) {
-  color: #007bff;
+  color: #303E69;
   text-decoration: none;
 }
 
@@ -2298,7 +2307,7 @@ export default {
   width: 50px;
   height: 50px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;

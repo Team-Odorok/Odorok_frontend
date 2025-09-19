@@ -75,7 +75,7 @@ export default {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
@@ -93,7 +93,7 @@ export default {
 .retry-button {
   margin-top: 10px;
   padding: 8px 16px;
-  background: #3498db;
+  background: #303E69;
   color: white;
   border: none;
   border-radius: 4px;
@@ -101,7 +101,7 @@ export default {
 }
 
 .retry-button:hover {
-  background: #2980b9;
+  background: #1e2a4a;
 }
 
 .articles {

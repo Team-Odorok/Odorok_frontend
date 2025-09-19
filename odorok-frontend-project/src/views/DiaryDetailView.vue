@@ -346,10 +346,12 @@ export default {
   gap: 20px;
   font-size: 0.9rem;
   opacity: 0.9;
+  font-family: 'MaruBuri', serif;
 }
 
 .course-name {
   font-weight: 600;
+  font-family: 'MaruBuri', serif;
 }
 
 .image-gallery {

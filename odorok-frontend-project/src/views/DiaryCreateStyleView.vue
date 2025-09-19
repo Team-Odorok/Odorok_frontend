@@ -306,7 +306,7 @@ export default {
 .diary-create-style-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 26px;
 }
 
 .style-header {
@@ -317,7 +317,7 @@ export default {
 .back-btn {
   background: none;
   border: none;
-  color: #007bff;
+  color: #303E69;
   font-size: 1rem;
   cursor: pointer;
   padding: 10px 0;
@@ -326,7 +326,7 @@ export default {
 }
 
 .back-btn:hover {
-  color: #0056b3;
+  color: #1e2a4a;
 }
 
 .style-header h1 {
@@ -350,7 +350,7 @@ export default {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #303E69;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
@@ -436,14 +436,14 @@ export default {
 }
 
 .tone-option:hover {
-  border-color: #007bff;
+  border-color: #303E69;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(48, 62, 105, 0.1);
 }
 
 .tone-option.selected {
-  border-color: #007bff;
-  background: #f8f9ff;
+  border-color: #303E69;
+  background: #f0f2ff;
 }
 
 .tone-option input[type="radio"] {
@@ -482,14 +482,14 @@ export default {
 }
 
 .emoticon-option:hover {
-  border-color: #007bff;
+  border-color: #303E69;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(48, 62, 105, 0.1);
 }
 
 .emoticon-option.selected {
-  border-color: #007bff;
-  background: #f8f9ff;
+  border-color: #303E69;
+  background: #f0f2ff;
 }
 
 .emoticon-option input[type="radio"] {
@@ -537,14 +537,14 @@ export default {
 }
 
 .course-option:hover {
-  border-color: #007bff;
+  border-color: #303E69;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(48, 62, 105, 0.1);
 }
 
 .course-option.selected {
-  border-color: #007bff;
-  background: #f8f9ff;
+  border-color: #303E69;
+  background: #f0f2ff;
 }
 
 .course-option input[type="radio"] {
@@ -559,7 +559,7 @@ export default {
 }
 
 .course-date {
-  color: #007bff;
+  color: #303E69;
   font-size: 0.9rem;
   margin-bottom: 8px;
   font-weight: 500;
@@ -596,7 +596,7 @@ export default {
 }
 
 .encouragement {
-  color: #007bff !important;
+  color: #303E69 !important;
   font-weight: 600;
   font-size: 1.1rem !important;
   margin-top: 15px !important;
@@ -610,7 +610,7 @@ export default {
 }
 
 .next-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #384F45 0%, #2a3a32 100%);
   color: white;
   border: none;
   padding: 15px 40px;
