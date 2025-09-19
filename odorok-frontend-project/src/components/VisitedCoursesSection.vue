@@ -147,24 +147,20 @@ export default {
         console.log('✅ 방문한 코스 조회 성공:', response)
         
         if (response && response.data) {
-          // 새로운 응답 형식: reviewList 사용
-          const courses = response.data.reviewList || response.data.visitedCourses || response.data.coursesList || response.data.items || response.data || []
-          
-          // 새로운 형식에 맞춰 데이터 변환
+          // 방문한 코스 리스트는 coursesList만 사용 (reviewList는 후기 섹션에서 소비)
+          const courses = response.data.coursesList || []
           visitedCourses.value = courses.map(course => ({
             id: course.courseId || course.id || course.visitedCourseId,
-            visitedCourseId: course.courseId || course.visitedCourseId || course.id,
+            visitedCourseId: course.visitedCourseId || course.id || course.courseId,
             courseId: course.courseId || course.id,
             courseName: course.courseName || course.gilName || '알 수 없는 코스',
-            hasReview: true,
-            reviewObject: {
-              rating: course.stars || course.rating || 0,
-              content: course.review || course.content || ''
-            }
+            visitedAt: course.visitedAt || course.createdAt,
+            distance: course.distance || 0,
+            level: course.level,
+            reqTime: course.reqTime
           }))
-          
           totalPages.value = response.data.totalPages || 1
-          console.log('🔍 방문한 코스 데이터:', visitedCourses.value.length, '개')
+          console.log('🔍 방문한 코스 데이터(coursesList):', visitedCourses.value.length, '개')
         } else if (Array.isArray(response)) {
           visitedCourses.value = response
           totalPages.value = 1

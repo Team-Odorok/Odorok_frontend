@@ -53,13 +53,6 @@
               >
                 수정
               </button>
-              <button 
-                @click="deleteReview(review)" 
-                class="delete-btn"
-                :disabled="loading"
-              >
-                삭제
-              </button>
             </div>
           </div>
         </div>
@@ -226,48 +219,22 @@ export default {
         const response = await getVisitedCourses()
         console.log('✅ 방문한 코스 조회 성공:', response)
         
-        if (response && response.data) {
-          // 새로운 응답 형식: reviewList 사용
-          const courses = response.data.reviewList || response.data.visitedCourses || response.data.coursesList || response.data.items || response.data || []
-          console.log('🔍 방문한 코스 데이터 확인:', courses.length, '개')
-          console.log('🔍 courses 타입:', typeof courses, Array.isArray(courses))
-          console.log('🔍 전체 응답 구조:', response.data)
-          
-          // courses가 배열인지 확인
-          if (!Array.isArray(courses)) {
-            console.error('❌ courses가 배열이 아닙니다:', courses)
-            reviews.value = []
-            return
-          }
-          
-          // 각 코스의 후기 상태 확인
-          courses.forEach((course, index) => {
-            const courseId = course.courseId || course.id || course.visitedCourseId
-            if (index < 5 || courseId === 7168) { // 처음 5개 + 방금 작성한 코스 (7168)
-              console.log(`코스 ${index + 1}:`, {
-                id: courseId,
-                name: course.courseName || course.gilName,
-                hasReview: !!course.review || !!course.stars,
-                reviewContent: course.review || '없음',
-                stars: course.stars,
-                전체데이터: course
-              })
-            }
-          })
-          
-          // 후기가 있는 코스들만 필터링 (새로운 형식에서는 모든 항목이 후기가 있음)
-          const coursesWithReviews = courses.filter(course => course.review || course.stars)
-          console.log('🔍 후기가 있는 코스:', coursesWithReviews.length, '개')
-          
-          reviews.value = coursesWithReviews
-          totalPages.value = response.data.totalPages || 1
-        } else if (Array.isArray(response)) {
-          console.log('🔍 배열 형태 응답:', response.length, '개')
-          const coursesWithReviews = response.filter(course => course.review && course.review.content)
-          console.log('🔍 후기가 있는 코스:', coursesWithReviews.length, '개')
-          reviews.value = coursesWithReviews
+        if (response && response.data && Array.isArray(response.data.reviewList)) {
+          const reviewList = response.data.reviewList
+          console.log('🔍 reviewList 항목 수:', reviewList.length)
+          // 컴포넌트가 기대하는 필드로 매핑
+          reviews.value = reviewList.map(item => ({
+            id: item.courseId,
+            visitedCourseId: item.courseId,
+            courseId: item.courseId,
+            courseName: item.courseName,
+            rating: item.stars || 0,
+            content: item.review || '',
+            createdAt: item.createdAt || item.visitedAt || null
+          }))
           totalPages.value = 1
         } else {
+          console.warn('reviewList가 없거나 배열이 아닙니다. 응답:', response?.data)
           reviews.value = []
           totalPages.value = 1
         }
@@ -314,24 +281,7 @@ export default {
       showReviewModal.value = true
     }
 
-    // 후기 삭제
-    const deleteReview = async (review) => {
-      if (!confirm('정말로 이 후기를 삭제하시겠습니까?')) return
-      
-      try {
-        // 후기 삭제는 빈 내용으로 업데이트
-        await upsertVisitedCourseReview(review.visitedCourseId || review.id, {
-          rating: 0,
-          content: ''
-        })
-        
-        alert('후기가 삭제되었습니다.')
-        loadReviews()
-      } catch (err) {
-        console.error('후기 삭제 실패:', err)
-        alert('후기 삭제에 실패했습니다.')
-      }
-    }
+    // 삭제 기능 비활성화 (요청에 따라 제거)
 
     // 후기 저장
     const saveReview = async () => {
@@ -564,7 +514,6 @@ export default {
       refreshReviews,
       formatDate,
       editReview,
-      deleteReview,
       saveReview,
       closeModal,
       goToVisitedCourses,

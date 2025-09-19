@@ -54,7 +54,7 @@ export const upsertVisitedCourseReview = async (visitedCourseId, reviewData) => 
   if (!visitedCourseId) throw new Error('visitedCourseId is required')
   try {
     // 토큰 확인
-    const token = localStorage.getItem('accessToken')
+    let token = localStorage.getItem('accessToken')
     console.log('🔑 토큰 상태:', token ? `${token.substring(0, 20)}...` : '없음')
     
     if (!token) {
@@ -87,47 +87,42 @@ export const upsertVisitedCourseReview = async (visitedCourseId, reviewData) => 
       console.log('⚠️ 토큰 갱신 에러:', refreshError)
     }
     
-    // Swagger에 맞게 JSON 형식으로 전송
-    const requestBody = {
-      star: reviewData.rating || 0,
-      review: reviewData.content || ''
-    }
+    // 서버 스펙에 맞춰 form-data로 star, review만 전송
+    const ratingNum = Math.max(0, Math.min(5, Number(reviewData.rating) || 0))
+    const contentStr = (reviewData.content || '').toString()
+    const formData = new FormData()
+    formData.append('star', String(ratingNum))
+    formData.append('review', contentStr)
     
-    // 이미지 파일이 있으면 Base64로 변환하여 JSON에 추가
+    // 이미지 파일이 있으면 파일 그대로 form-data에 포함
     if (reviewData.imageFile) {
-      const reader = new FileReader()
-      const base64Promise = new Promise((resolve) => {
-        reader.onload = () => resolve(reader.result)
-        reader.readAsDataURL(reviewData.imageFile)
-      })
-      const base64Image = await base64Promise
-      requestBody.image = base64Image
-      console.log('🔍 이미지 파일 추가됨:', reviewData.imageFile.name, reviewData.imageFile.size)
+      try {
+        formData.append('image', reviewData.imageFile, reviewData.imageFile.name)
+        console.log('🔍 이미지 파일 추가됨:', reviewData.imageFile.name, reviewData.imageFile.size)
+      } catch (_) {
+        console.log('⚠️ 이미지 파일 추가 실패, 파일 없이 전송합니다.')
+      }
     } else {
       console.log('🔍 이미지 파일 없음')
     }
     
-    console.log('🔍 JSON 전송:', {
-      visitedCourseId,
-      requestBody
-    })
+    console.log('🔍 FormData 전송:', { visitedCourseId, star: ratingNum, review: contentStr, hasImage: !!reviewData.imageFile })
     
     const url = `https://odorok.duckdns.org/api/visited-courses/${visitedCourseId}/reviews`
     console.log('🌐 요청 URL:', url)
     console.log('📤 요청 헤더:', {
-      'Authorization': `Bearer ${token.substring(0, 20)}...`,
-      'Content-Type': 'application/json'
+      'Authorization': `Bearer ${token ? token.substring(0, 20) + '...' : '없음'}`,
+      'Content-Type': '(브라우저가 multipart/form-data boundary 자동 설정)'
     })
-    console.log('📤 요청 본문:', JSON.stringify(requestBody, null, 2))
     
     // fetch API로 직접 시도 (authClient 대신)
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${token}`
+        // Content-Type은 생략 (브라우저가 multipart/form-data로 자동 설정)
       },
-      body: JSON.stringify(requestBody)
+      body: formData
     })
     
     console.log('📥 응답 정보:')

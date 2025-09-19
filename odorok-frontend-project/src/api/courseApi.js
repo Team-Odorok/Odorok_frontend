@@ -42,6 +42,15 @@ apiClient.interceptors.request.use(
     if (isRefreshing) {
       return Promise.reject(new Error('새로고침 중 요청 취소'))
     }
+    try {
+      const fullUrl = `${API_BASE_URL}${config.url}`
+      const method = (config.method || 'get').toUpperCase()
+      // 디버그 로그(민감정보 제외)
+      console.log(`[API→] ${method} ${fullUrl}`, {
+        params: config.params || null,
+        hasBody: !!config.data
+      })
+    } catch (_) {}
     return config
   },
   (error) => Promise.reject(error)
@@ -49,7 +58,14 @@ apiClient.interceptors.request.use(
 
 // 응답 인터셉터 추가
 apiClient.interceptors.response.use(
-  response => response,
+  response => {
+    try {
+      const req = response.config || {}
+      const fullUrl = `${API_BASE_URL}${req.url}`
+      console.log(`[API←] ${response.status} ${fullUrl}`)
+    } catch (_) {}
+    return response
+  },
   error => {
     if (error.response?.status === 401) {
       // 토큰이 만료되었거나 유효하지 않은 경우
@@ -60,8 +76,12 @@ apiClient.interceptors.response.use(
       if (window.location.pathname !== '/login') {
         window.location.href = '/login'
       }
-    } else if (error.response?.status >= 500) {
-      console.error('Server error:', error.response?.status, error.response?.statusText)
+    } else if (error.response) {
+      const req = error.config || {}
+      try {
+        const fullUrl = `${API_BASE_URL}${req.url}`
+        console.error(`[API×] ${error.response.status} ${fullUrl}`)
+      } catch (_) {}
     }
 
     return Promise.reject(error)
@@ -124,6 +144,7 @@ const courseApi = {
 
   getUserRegionCourses: async (email, page = 0, size = 10, sort = 'rating,desc') => {
     try {
+      console.log('[Region] 사용자 지역 코스 요청 시작', { email, page, size, sort })
       const params = { email, page, size, sort }
       const response = await apiClient.get('/courses/user-region', { params })
       return response.data
@@ -149,6 +170,7 @@ const courseApi = {
   // 지역별 코스 검색
   searchByRegion: async (sidoCode, sigunguCode, email = null, page = 0, size = 10) => {
     try {
+      console.log('[Region] 지역별 코스 요청 시작', { sidoCode, sigunguCode, email, page, size })
       const params = {
         sidoCode,
         sigunguCode,
@@ -242,6 +264,7 @@ const courseApi = {
   // 시도 코드 조회
   getSidos: async () => {
     try {
+      console.log('[Region] 시도 목록 요청 시작')
       const response = await apiClient.get('/regions/sido');
       return response.data;
     } catch (error) {
@@ -253,6 +276,7 @@ const courseApi = {
   // 시군구 코드 조회
   getSigungus: async (sidoCode) => {
     try {
+      console.log('[Region] 시군구 목록 요청 시작', { sidoCode })
       const response = await apiClient.get('/regions/sigungu', {
         params: { sidoCode }
       });
