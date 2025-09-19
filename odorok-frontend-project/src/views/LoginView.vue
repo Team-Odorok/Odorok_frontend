@@ -11,7 +11,7 @@
             id="username"
             v-model="username"
             type="email"
-            placeholder="wonjun@mail.com"
+            placeholder="이메일을 입력하세요"
             autocomplete="username"
             required
             class="form-input"
@@ -24,7 +24,7 @@
             id="password"
             v-model="password"
             type="password"
-            placeholder="123"
+            placeholder="비밀번호를 입력하세요"
             autocomplete="current-password"
             required
             class="form-input"
@@ -74,8 +74,8 @@ export default {
   name: 'LoginView',
   setup() {
     const router = useRouter()
-    const username = ref('wonjun@mail.com')
-    const password = ref('123')
+    const username = ref('')
+    const password = ref('')
     const loading = ref(false)
     const error = ref('')
     
