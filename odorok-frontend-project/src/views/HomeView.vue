@@ -93,7 +93,7 @@
           <h2>지금 시작해보세요!</h2>
           <p>여행의 소중한 순간들을 기록하고 공유해보세요.</p>
           <router-link to="/diaries/create/style" class="btn btn-large">
-            일지 작성 시작하기
+            나의 오도록 작성 시작하기
           </router-link>
         </div>
       </div>
@@ -199,7 +199,7 @@ export default {
   width: 100%;
   margin: 0;
   padding: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #4F3A36;
   box-sizing: border-box;
 }
 
@@ -217,12 +217,12 @@ export default {
 }
 
 .btn-primary {
-  background: #667eea;
+  background: #4F3A36;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #5a6fd8;
+  background: #B96664;
   transform: translateY(-2px);
 }
 
@@ -234,12 +234,13 @@ export default {
 
 .btn-secondary:hover {
   background: white;
-  color: #667eea;
+  color: #4F3A36;
   transform: translateY(-2px);
 }
 
 .btn-large {
   padding: 16px 32px;
+  color: #4F3A36;
   font-size: 1.1rem;
 }
 
@@ -324,7 +325,7 @@ section {
 .stat-number {
   font-size: 3rem;
   font-weight: bold;
-  color: #667eea;
+  color: #4F3A36;
   margin-bottom: 0.5rem;
 }
 
@@ -414,7 +415,7 @@ section {
 
 /* CTA 섹션 */
 .cta-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background:#B96664 100%;
   color: white;
   text-align: center;
 }

@@ -3,10 +3,10 @@
     <div class="navbar-container">
       <!-- 로고/브랜드 -->
       <div class="navbar-brand">
-        <router-link to="/" class="brand-link">
-          <img src="/odorok-resized.png" alt="오도록" class="brand-logo" />
-          <span class="brand-text">오도록</span>
-        </router-link>
+              <router-link to="/" class="brand-link">
+                <img src="/transparent-odorok.png" alt="오도록" class="brand-logo" />
+                <span class="brand-text">오도록</span>
+              </router-link>
       </div>
 
       <!-- 메뉴 아이템들 (왼쪽 정렬) -->
@@ -200,8 +200,7 @@ export default {
 .brand-logo {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .brand-text {
@@ -308,7 +307,7 @@ export default {
 }
 
 .login-btn {
-  background: #877F5E;
+  background: #4F3A36;
   color: white;
 }
 
@@ -318,9 +317,8 @@ export default {
 }
 
 .logout-btn {
-  background: #877F5E;
+  background: #4F3A36;
   color: white;
-  border: 1px solid #877F5E;
 }
 
 .logout-btn:hover {

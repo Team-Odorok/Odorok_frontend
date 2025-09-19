@@ -43,9 +43,7 @@
       <!-- 소셜 로그인 섹션 -->
       <div class="social-login">
         <div class="divider">
-          <span>또는</span>
         </div>
-        
         <button 
           @click="handleKakaoLogin"
           class="kakao-login-btn"
@@ -59,20 +57,8 @@
         {{ error }}
       </div>
       
-      <div class="demo-info">
-        <h3>데모 계정</h3>
-        <p><strong>이메일:</strong> wonjun@mail.com</p>
-        <p><strong>비밀번호:</strong> 123</p>
-      </div>
-      
       <div class="signup-link">
         <p>계정이 없으신가요? <router-link to="/signup">회원가입</router-link></p>
-      </div>
-      
-      <div class="swagger-link">
-        <a :href="swaggerUrl" target="_blank" class="swagger-btn">
-          스웨거 문서 확인
-        </a>
       </div>
     </div>
   </div>
@@ -155,7 +141,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #FDF9F1;
   padding: 20px;
 }
 
@@ -210,8 +196,8 @@ export default {
   border-color: #667eea;
 }
 
-.login-btn {
-  background: #667eea;
+.login-btn { 
+  background: #4F3A36;
   color: white;
   padding: 14px;
   border: none;
@@ -245,7 +231,7 @@ export default {
 }
 
 .login-btn:hover:not(:disabled) {
-  background: #5a6fd8;
+  background: #C15345;
 }
 
 .login-btn:disabled {
